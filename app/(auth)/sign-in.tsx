@@ -1,28 +1,28 @@
-import React, { useState, useCallback } from 'react';
+import { useOAuth, useSignIn } from '@clerk/expo';
+import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import React, { useCallback, useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useOAuth } from '@clerk/expo';
-import { useSignIn } from '@clerk/expo/legacy';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import { Colors } from '../../constants/Colors';
 import { LocalStorage } from '../../utils/storage';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
-  const { isLoaded, signIn, setActive } = useSignIn();
+  const { isLoaded, signIn, setActive } = useSignIn() as any;
   const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
   const router = useRouter();
 
@@ -138,7 +138,7 @@ export default function SignInScreen() {
             <Ionicons
               name="mail-outline"
               size={20}
-              color={emailFocused ? '#10B981' : '#9CA3AF'}
+              color={emailFocused ? Colors.primary : '#9CA3AF'}
               style={styles.inputIcon}
             />
             <TextInput
@@ -164,7 +164,7 @@ export default function SignInScreen() {
             <Ionicons
               name="lock-closed-outline"
               size={20}
-              color={passwordFocused ? '#10B981' : '#9CA3AF'}
+              color={passwordFocused ? Colors.primary : '#9CA3AF'}
               style={styles.inputIcon}
             />
             <TextInput
@@ -186,14 +186,17 @@ export default function SignInScreen() {
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color={passwordFocused ? '#10B981' : '#9CA3AF'}
+                color={passwordFocused ? Colors.primary : '#9CA3AF'}
               />
             </TouchableOpacity>
           </View>
 
+          {/* Forgot Password hidden until password recovery is implemented */}
+          {/*
           <TouchableOpacity style={styles.forgotPasswordContainer} activeOpacity={0.7}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
+          */}
 
           {/* Sign In Button */}
           <TouchableOpacity
@@ -262,12 +265,12 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: Colors.primary10,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: Colors.primary20,
   },
   logoInnerCircle: {
     width: 70,
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
   },
   appSubtitle: {
     fontSize: 12,
-    color: '#10B981',
+    color: Colors.primary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -356,8 +359,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputWrapperFocused: {
-    borderColor: '#10B981',
-    shadowColor: '#10B981',
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -380,17 +383,17 @@ const styles = StyleSheet.create({
     marginTop: -4,
   },
   forgotPasswordText: {
-    color: '#10B981',
+    color: Colors.primary,
     fontSize: 13,
     fontWeight: '600',
   },
   signInButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.primary,
     height: 56,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#10B981',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
@@ -451,7 +454,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   footerLink: {
-    color: '#10B981',
+    color: Colors.primary,
     fontSize: 14,
     fontWeight: '700',
   },

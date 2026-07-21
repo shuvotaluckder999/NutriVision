@@ -9,18 +9,24 @@ const syncedUsersCache: { [userId: string]: boolean } = {};
 export function useSyncUser() {
   const { user, isLoaded, isSignedIn } = useUser();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSynced, setIsSynced] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     async function syncUser() {
-      if (!isLoaded || !isSignedIn || !user) return;
+      if (!isLoaded || !isSignedIn || !user) {
+        setIsSynced(false);
+        return;
+      }
 
       if (syncedUsersCache[user.id]) {
-        console.log('User profile already synchronized in this app session.');
+        setIsSynced(true);
+        setError(null);
         return;
       }
 
       setIsSyncing(true);
+      setIsSynced(false);
       try {
         const userDocRef = doc(db, 'users', user.id);
         const userDoc = await getDoc(userDocRef);
@@ -39,12 +45,27 @@ export function useSyncUser() {
           });
           console.log('User profile successfully synchronized to Firestore!');
         } else {
-          console.log('User profile already synced in Firestore.');
+          // Document exists, update it, preserving createdAt and updating updatedAt
+          const existingData = userDoc.data();
+          await setDoc(userDocRef, {
+            uid: user.id,
+            email: user.primaryEmailAddress?.emailAddress || '',
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            fullName: user.fullName || '',
+            imageUrl: user.imageUrl || '',
+            createdAt: existingData?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+          console.log('User profile successfully updated/refreshed in Firestore.');
         }
         syncedUsersCache[user.id] = true;
+        setIsSynced(true);
+        setError(null); // Clear any stale error on success
       } catch (err) {
         console.error('Error syncing user to Firestore:', err);
         setError(err as Error);
+        setIsSynced(false);
       } finally {
         setIsSyncing(false);
       }
@@ -53,5 +74,5 @@ export function useSyncUser() {
     syncUser();
   }, [user, isLoaded, isSignedIn]);
 
-  return { isSyncing, error };
+  return { isSyncing, isSynced, error };
 }

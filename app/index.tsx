@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Image, StatusBar } from 'react-native';
+import { Colors } from '../constants/Colors';
 
 export default function EntryScreen() {
   return (
@@ -15,7 +16,7 @@ export default function EntryScreen() {
         </View>
         <Text style={styles.appName}>NutriVision</Text>
         <Text style={styles.appSubtitle}>AI Calories Calculator</Text>
-        <ActivityIndicator size="small" color="#10B981" style={styles.loader} />
+        <ActivityIndicator size="small" color={Colors.primary} style={styles.loader} />
       </View>
     </View>
   );
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginBottom: 20,
     borderWidth: 1.5,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    borderColor: Colors.primary30,
   },
   logo: {
     width: 50,
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   appSubtitle: {
     fontSize: 13,
-    color: '#10B981',
+    color: Colors.primary,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 3,
