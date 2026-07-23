@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,6 +12,8 @@ import {
 import { useUser } from '@clerk/expo';
 import { useSyncUser } from '../../hooks/useSyncUser';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/Colors';
+import { OnboardingStorage, UserOnboardingData } from '../../utils/onboardingStorage';
 
 const { width } = Dimensions.get('window');
 
@@ -19,7 +21,22 @@ export default function DashboardScreen() {
   const { user } = useUser();
   
   // Trigger Firebase User Sync automatically on home screen mount
-  const { isSyncing, error } = useSyncUser();
+  const { isSynced, error } = useSyncUser();
+  const [userProfile, setUserProfile] = useState<UserOnboardingData | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      OnboardingStorage.getOnboardingData(user.id).then((data) => {
+        if (data) setUserProfile(data);
+      });
+    }
+  }, [user?.id]);
+
+  const targetCalories = userProfile?.nutritionPlan?.calories || 2200;
+  const targetProtein = userProfile?.nutritionPlan?.protein || 130;
+  const targetCarbs = userProfile?.nutritionPlan?.carbs || 250;
+  const targetFats = userProfile?.nutritionPlan?.fats || 70;
+  const waterLiters = userProfile?.nutritionPlan?.waterLiters || 3.0;
 
   // Formatting date
   const getTodayDateString = () => {
@@ -49,18 +66,24 @@ export default function DashboardScreen() {
       </View>
 
       {/* Firebase Sync Status Badge */}
-      <View style={[styles.syncBadge, error ? styles.syncBadgeError : styles.syncBadgeSuccess]}>
+      <View style={[
+        styles.syncBadge,
+        error ? styles.syncBadgeError : (isSynced ? styles.syncBadgeSuccess : styles.syncBadgePending)
+      ]}>
         <Ionicons
-          name={error ? 'alert-circle' : isSyncing ? 'sync' : 'checkmark-circle'}
+          name={error ? 'alert-circle' : (isSynced ? 'checkmark-circle' : 'sync')}
           size={16}
-          color={error ? '#EF4444' : '#10B981'}
+          color={error ? Colors.error : (isSynced ? Colors.primary : Colors.warning)}
         />
-        <Text style={[styles.syncText, error ? styles.syncTextError : styles.syncTextSuccess]}>
-          {isSyncing
-            ? 'Syncing profile with Firestore...'
+        <Text style={[
+          styles.syncText,
+          error ? styles.syncTextError : (isSynced ? styles.syncTextSuccess : styles.syncTextPending)
+        ]}>
+          {isSynced
+            ? 'Account synced with Firestore'
             : error
             ? 'Firebase sync error'
-            : 'Account synced with Firestore'}
+            : 'Syncing profile with Firestore...'}
         </Text>
       </View>
 
@@ -75,25 +98,25 @@ export default function DashboardScreen() {
           <View style={styles.calorieRingOuter}>
             <View style={styles.calorieRingInner}>
               <Text style={styles.calorieCount}>1,420</Text>
-              <Text style={styles.calorieUnit}>/ 2,200 kcal</Text>
+              <Text style={styles.calorieUnit}>/ {targetCalories.toLocaleString()} kcal</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.calorieDetails}>
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Consumed</Text>
-            <Text style={styles.detailVal}>1,750 kcal</Text>
+            <Text style={styles.detailLabel}>Target Goal</Text>
+            <Text style={styles.detailVal}>{targetCalories.toLocaleString()} kcal</Text>
           </View>
           <View style={styles.detailDivider} />
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Burned</Text>
-            <Text style={styles.detailVal}>330 kcal</Text>
+            <Text style={styles.detailLabel}>Water Goal</Text>
+            <Text style={styles.detailVal}>{waterLiters} L</Text>
           </View>
           <View style={styles.detailDivider} />
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Remaining</Text>
-            <Text style={[styles.detailVal, { color: '#10B981' }]}>780 kcal</Text>
+            <Text style={styles.detailLabel}>Protein Goal</Text>
+            <Text style={[styles.detailVal, { color: Colors.primary }]}>{targetProtein}g</Text>
           </View>
         </View>
       </View>
@@ -107,9 +130,9 @@ export default function DashboardScreen() {
             <Ionicons name="fitness" size={18} color="#EF4444" />
           </View>
           <Text style={styles.macroName}>Protein</Text>
-          <Text style={styles.macroValue}>85g / 130g</Text>
+          <Text style={styles.macroValue}>85g / {targetProtein}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#EF4444', width: '65%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#EF4444', width: `${Math.min(100, Math.round((85 / targetProtein) * 100))}%` }]} />
           </View>
         </View>
 
@@ -119,9 +142,9 @@ export default function DashboardScreen() {
             <Ionicons name="nutrition" size={18} color="#F59E0B" />
           </View>
           <Text style={styles.macroName}>Carbs</Text>
-          <Text style={styles.macroValue}>180g / 250g</Text>
+          <Text style={styles.macroValue}>180g / {targetCarbs}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#F59E0B', width: '72%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#F59E0B', width: `${Math.min(100, Math.round((180 / targetCarbs) * 100))}%` }]} />
           </View>
         </View>
 
@@ -131,26 +154,25 @@ export default function DashboardScreen() {
             <Ionicons name="water" size={18} color="#3B82F6" />
           </View>
           <Text style={styles.macroName}>Fats</Text>
-          <Text style={styles.macroValue}>42g / 70g</Text>
+          <Text style={styles.macroValue}>42g / {targetFats}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#3B82F6', width: '60%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#3B82F6', width: `${Math.min(100, Math.round((42 / targetFats) * 100))}%` }]} />
           </View>
         </View>
       </View>
 
-      {/* AI Scanner Trigger */}
-      <TouchableOpacity style={styles.scanButton} activeOpacity={0.85}>
+      {/* AI Scanner View (non-interactive until scanner flow is implemented) */}
+      <View style={styles.scanButton}>
         <View style={styles.scanButtonContent}>
           <View style={styles.scanIconBg}>
             <Ionicons name="camera" size={24} color="#0C0F17" />
           </View>
           <View style={styles.scanTexts}>
             <Text style={styles.scanTitle}>Scan food with AI</Text>
-            <Text style={styles.scanSubtitle}>Get instant calories & nutrition breakdown</Text>
+            <Text style={styles.scanSubtitle}>Get instant calories & nutrition breakdown (Coming Soon)</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#10B981" />
         </View>
-      </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -196,7 +218,7 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 23,
     borderWidth: 2,
-    borderColor: '#10B981',
+    borderColor: Colors.primary,
   },
   avatarPlaceholder: {
     width: 46,
@@ -219,12 +241,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   syncBadgeSuccess: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: Colors.primary10,
+    borderColor: Colors.primary20,
+  },
+  syncBadgePending: {
+    backgroundColor: Colors.warning10,
+    borderColor: Colors.warning20,
   },
   syncBadgeError: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: Colors.error10,
+    borderColor: Colors.error20,
   },
   syncText: {
     fontSize: 12,
@@ -232,10 +258,13 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   syncTextSuccess: {
-    color: '#10B981',
+    color: Colors.primary,
+  },
+  syncTextPending: {
+    color: Colors.warning,
   },
   syncTextError: {
-    color: '#EF4444',
+    color: Colors.error,
   },
   calorieCard: {
     backgroundColor: '#121824',
@@ -276,11 +305,11 @@ const styles = StyleSheet.create({
     borderWidth: 12,
     borderColor: '#1E293B',
     // We create a partial highlight using borders (or simulate ring path)
-    borderLeftColor: '#10B981',
-    borderTopColor: '#10B981',
+    borderLeftColor: Colors.primary,
+    borderTopColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#10B981',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -380,10 +409,10 @@ const styles = StyleSheet.create({
   scanButton: {
     backgroundColor: '#121824',
     borderWidth: 1.5,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: Colors.primary20,
     borderRadius: 20,
     padding: 16,
-    shadowColor: '#10B981',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -396,7 +425,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: '#10B981',
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,

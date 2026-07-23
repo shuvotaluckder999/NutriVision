@@ -1,13 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { Colors } from '../../constants/Colors';
 
 export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#10B981', // Mint/emerald active color
+        tabBarActiveTintColor: Colors.primary, // Mint/emerald active color
         tabBarInactiveTintColor: '#6B7280', // Slate gray inactive color
         tabBarLabelStyle: {
           fontSize: 12,
@@ -32,7 +33,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Calculator',
+          title: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'calculator' : 'calculator-outline'}

@@ -1,7 +1,15 @@
 import { useAuth, useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import {
+  Activity01Icon,
+  BodyWeightIcon,
+  Calendar01Icon,
+  RulerIcon,
+  Target01Icon,
+  UserIcon,
+} from 'hugeicons-react-native';
 import React from 'react';
-import { LocalStorage } from '../../utils/storage';
 import {
   Image,
   Platform,
@@ -11,10 +19,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Colors } from '../../constants/Colors';
+import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
+import { LocalStorage } from '../../utils/storage';
 
 export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
+  const router = useRouter();
+
+  const { onboardingData } = useOnboardingStatus();
 
   const handleSignOut = async () => {
     try {
@@ -25,11 +39,41 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleEditProfile = () => {
+    router.push('/onboarding' as any);
+  };
+
   const emailAddress = user?.primaryEmailAddress?.emailAddress || 'Not set';
   const fullName = user?.fullName || 'NutriVision User';
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Unknown';
+
+  const formatGoal = (g?: string) => {
+    if (g === 'gain') return 'Gain Weight';
+    if (g === 'lose') return 'Lose Weight';
+    if (g === 'maintain') return 'Maintain';
+    return g || 'Not set';
+  };
+
+  const formatGender = (g?: string) => {
+    if (g === 'male') return 'Male';
+    if (g === 'female') return 'Female';
+    if (g === 'other') return 'Other / Non-binary';
+    return g || 'Not set';
+  };
+
+  const birthdateStr = onboardingData?.birthdate
+    ? `${onboardingData.birthdate.day}/${onboardingData.birthdate.month}/${onboardingData.birthdate.year}`
+    : 'Not set';
+
+  const heightStr = onboardingData?.height
+    ? `${onboardingData.height.feet} ft ${onboardingData.height.inches} in`
+    : '5 ft 9 in';
+
+  const weightStr = onboardingData?.weight
+    ? `${onboardingData.weight.kg} kg`
+    : '70 kg';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -54,35 +98,88 @@ export default function ProfileScreen() {
       </View>
 
       {/* Fitness Profile Settings */}
-      <Text style={styles.sectionTitle}>Nutrition Goals</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Fitness Profile</Text>
+        <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
+          <Text style={styles.editBtnText}>Edit Profile</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.goalCard}>
+        {/* Goal */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <Ionicons name="flame" size={20} color="#10B981" />
+            <View style={styles.iconBg}>
+              <Target01Icon size={20} color={Colors.primary} />
+            </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Daily Calories</Text>
-              <Text style={styles.goalValue}>2,200 kcal</Text>
+              <Text style={styles.goalLabel}>Fitness Goal</Text>
+              <Text style={styles.goalValue}>{formatGoal(onboardingData?.goal)}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.divider} />
 
+        {/* Workout Frequency */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <Ionicons name="scale" size={20} color="#10B981" />
+            <View style={styles.iconBg}>
+              <Activity01Icon size={20} color={Colors.primary} />
+            </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Target Weight</Text>
-              <Text style={styles.goalValue}>72 kg</Text>
+              <Text style={styles.goalLabel}>Workout Frequency</Text>
+              <Text style={styles.goalValue}>{onboardingData?.workoutDays || 'Not set'}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Gender & Birthdate */}
+        <View style={styles.goalRow}>
+          <View style={styles.goalItem}>
+            <View style={styles.iconBg}>
+              <UserIcon size={20} color={Colors.primary} />
+            </View>
+            <View style={styles.goalTextContainer}>
+              <Text style={styles.goalLabel}>Gender</Text>
+              <Text style={styles.goalValue}>{formatGender(onboardingData?.gender)}</Text>
+            </View>
+          </View>
+          <View style={styles.goalItem}>
+            <View style={styles.iconBg}>
+              <Calendar01Icon size={20} color={Colors.primary} />
+            </View>
+            <View style={styles.goalTextContainer}>
+              <Text style={styles.goalLabel}>Birthdate</Text>
+              <Text style={styles.goalValue}>{birthdateStr}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Height & Weight */}
+        <View style={styles.goalRow}>
+          <View style={styles.goalItem}>
+            <View style={styles.iconBg}>
+              <RulerIcon size={20} color={Colors.primary} />
+            </View>
+            <View style={styles.goalTextContainer}>
+              <Text style={styles.goalLabel}>Height</Text>
+              <Text style={styles.goalValue}>{heightStr}</Text>
+            </View>
+          </View>
+          <View style={styles.goalItem}>
+            <View style={styles.iconBg}>
+              <BodyWeightIcon size={20} color={Colors.primary} />
+            </View>
+            <View style={styles.goalTextContainer}>
+              <Text style={styles.goalLabel}>Weight</Text>
+              <Text style={styles.goalValue}>{weightStr}</Text>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -164,7 +261,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 16,
     elevation: 8,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   profileHeader: {
     alignItems: 'center',
@@ -174,7 +271,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 3,
-    borderColor: '#10B981',
+    borderColor: Colors.primary,
     marginBottom: 16,
   },
   avatarPlaceholder: {
@@ -185,7 +282,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#10B981',
+    borderColor: Colors.primary,
     marginBottom: 16,
   },
   nameText: {
@@ -199,30 +296,35 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   memberBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: Colors.primary10,
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginTop: 12,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: Colors.primary20,
   },
   memberText: {
-    color: '#10B981',
+    color: Colors.primary,
     fontSize: 12,
     fontWeight: '600',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 10,
   },
   sectionTitle: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 16,
-    marginTop: 10,
   },
   goalCard: {
     backgroundColor: '#121824',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     borderWidth: 1,
     borderColor: '#1E293B',
     marginBottom: 24,
@@ -236,6 +338,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  iconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.primary10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   goalTextContainer: {
     marginLeft: 12,
   },
@@ -246,7 +356,7 @@ const styles = StyleSheet.create({
   },
   goalValue: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     marginTop: 2,
   },
@@ -257,14 +367,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   editBtnText: {
-    color: '#10B981',
+    color: Colors.primary,
     fontSize: 12,
     fontWeight: '600',
   },
   divider: {
     height: 1,
     backgroundColor: '#1E293B',
-    marginVertical: 16,
+    marginVertical: 14,
   },
   menuContainer: {
     backgroundColor: '#121824',
@@ -272,6 +382,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1E293B',
     paddingHorizontal: 16,
+    marginTop: 12,
     marginBottom: 32,
   },
   menuItem: {
