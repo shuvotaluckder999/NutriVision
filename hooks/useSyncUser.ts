@@ -45,18 +45,22 @@ export function useSyncUser() {
           });
           console.log('User profile successfully synchronized to Firestore!');
         } else {
-          // Document exists, update it, preserving createdAt and updating updatedAt
+          // Document exists, update it, preserving existing onboarding and nutrition fields
           const existingData = userDoc.data();
-          await setDoc(userDocRef, {
-            uid: user.id,
-            email: user.primaryEmailAddress?.emailAddress || '',
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            fullName: user.fullName || '',
-            imageUrl: user.imageUrl || '',
-            createdAt: existingData?.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+          await setDoc(
+            userDocRef,
+            {
+              uid: user.id,
+              email: user.primaryEmailAddress?.emailAddress || '',
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              fullName: user.fullName || '',
+              imageUrl: user.imageUrl || '',
+              createdAt: existingData?.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
           console.log('User profile successfully updated/refreshed in Firestore.');
         }
         syncedUsersCache[user.id] = true;

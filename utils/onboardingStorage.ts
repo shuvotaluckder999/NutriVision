@@ -27,6 +27,12 @@ export interface UserOnboardingData {
 
 const ONBOARDING_KEY_PREFIX = '@nutrivision_onboarding_';
 
+export interface SaveResult {
+  success: boolean;
+  asyncStorageSaved: boolean;
+  firestoreSaved: boolean;
+}
+
 export const OnboardingStorage = {
   /**
    * Get onboarding key for a given user ID
@@ -42,7 +48,7 @@ export const OnboardingStorage = {
     userId: string,
     data: Partial<UserOnboardingData>,
     nutritionPlan?: AINutritionPlan
-  ): Promise<void> {
+  ): Promise<SaveResult> {
     const fullData: UserOnboardingData = {
       gender: data.gender || '',
       goal: data.goal || '',
@@ -55,9 +61,13 @@ export const OnboardingStorage = {
       updatedAt: new Date().toISOString(),
     };
 
+    let asyncStorageSaved = false;
+    let firestoreSaved = false;
+
     // 1. Save to AsyncStorage
     try {
       await AsyncStorage.setItem(this.getKey(userId), JSON.stringify(fullData));
+      asyncStorageSaved = true;
     } catch (e) {
       console.error('Error saving onboarding data to AsyncStorage:', e);
     }
@@ -95,10 +105,17 @@ export const OnboardingStorage = {
           { merge: true }
         );
       }
+      firestoreSaved = true;
       console.log('Successfully saved user profile & AI Nutrition Plan to Firestore for user:', userId);
     } catch (e) {
       console.error('Error syncing user profile & AI Nutrition Plan to Firestore:', e);
     }
+
+    return {
+      success: asyncStorageSaved && firestoreSaved,
+      asyncStorageSaved,
+      firestoreSaved,
+    };
   },
 
   /**

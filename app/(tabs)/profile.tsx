@@ -11,6 +11,7 @@ import {
 } from 'hugeicons-react-native';
 import React from 'react';
 import {
+  ActivityIndicator,
   Image,
   Platform,
   ScrollView,
@@ -28,7 +29,7 @@ export default function ProfileScreen() {
   const { signOut } = useAuth();
   const router = useRouter();
 
-  const { onboardingData } = useOnboardingStatus();
+  const { checkingOnboarding, onboardingData } = useOnboardingStatus();
 
   const handleSignOut = async () => {
     try {
@@ -40,8 +41,16 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    router.push('/onboarding' as any);
+    router.push({ pathname: '/onboarding', params: { mode: 'edit' } } as any);
   };
+
+  if (checkingOnboarding) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   const emailAddress = user?.primaryEmailAddress?.emailAddress || 'Not set';
   const fullName = user?.fullName || 'NutriVision User';
@@ -67,13 +76,13 @@ export default function ProfileScreen() {
     ? `${onboardingData.birthdate.day}/${onboardingData.birthdate.month}/${onboardingData.birthdate.year}`
     : 'Not set';
 
-  const heightStr = onboardingData?.height
+  const heightStr = onboardingData?.height?.feet && onboardingData?.height?.inches
     ? `${onboardingData.height.feet} ft ${onboardingData.height.inches} in`
-    : '5 ft 9 in';
+    : 'Not set';
 
-  const weightStr = onboardingData?.weight
+  const weightStr = onboardingData?.weight?.kg
     ? `${onboardingData.weight.kg} kg`
-    : '70 kg';
+    : 'Not set';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -241,7 +250,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
   title: {
     color: '#FFFFFF',

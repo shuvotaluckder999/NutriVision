@@ -1,9 +1,9 @@
 export const Colors = {
-  // Theme Primary Color (#298f50) and matching opacities
+  // Theme Primary Color (#5182d8) and matching opacities
   primary: '#5182d8ff',
-  primary10: 'rgba(41, 143, 80, 0.1)',
-  primary20: 'rgba(41, 143, 80, 0.2)',
-  primary30: 'rgba(41, 143, 80, 0.3)',
+  primary10: 'rgba(81, 130, 216, 0.1)',
+  primary20: 'rgba(81, 130, 216, 0.2)',
+  primary30: 'rgba(81, 130, 216, 0.3)',
 
   // Background and Surfaces
   background: '#0C0F17', // Obsidian dark mode
