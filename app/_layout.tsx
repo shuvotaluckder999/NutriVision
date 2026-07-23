@@ -30,17 +30,20 @@ function InitialLayout() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
+    const inGeneratingPlan = segments[0] === 'generating-plan';
 
     if (isSignedIn) {
       if (onboardingCompleted === false) {
         // User has not filled database onboarding form yet -> navigate to step form
-        if (!inOnboarding) {
+        if (!inOnboarding && !inGeneratingPlan) {
           router.replace('/onboarding' as any);
         }
       } else if (onboardingCompleted === true) {
         // User ALREADY has information in database -> skip onboarding form & navigate to tabs
         if (inAuthGroup || inOnboarding || segments.length === 0 || segments[0] === 'index') {
-          router.replace('/(tabs)' as any);
+          if (!inGeneratingPlan) {
+            router.replace('/(tabs)' as any);
+          }
         }
       }
     } else {
@@ -56,6 +59,7 @@ function InitialLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
+      <Stack.Screen name="generating-plan" />
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

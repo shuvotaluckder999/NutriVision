@@ -98,20 +98,23 @@ export default function OnboardingScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     try {
-      const payload: Partial<UserOnboardingData> = {
-        gender,
-        goal,
-        workoutDays,
-        birthdate: { day, month, year },
-        height: { feet, inches },
-        weight: { kg: weightKg },
-      };
-
-      await OnboardingStorage.saveOnboardingData(user.id, payload);
-      router.replace('/(tabs)');
+      router.replace({
+        pathname: '/generating-plan',
+        params: {
+          gender,
+          goal,
+          workoutDays,
+          day,
+          month,
+          year,
+          feet,
+          inches,
+          weightKg,
+        },
+      } as any);
     } catch (error) {
-      console.error('Error submitting onboarding data:', error);
-      Alert.alert('Error', 'Could not save profile settings. Please try again.');
+      console.error('Error navigating to generating plan screen:', error);
+      Alert.alert('Error', 'Could not process selections. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

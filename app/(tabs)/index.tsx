@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -13,6 +13,7 @@ import { useUser } from '@clerk/expo';
 import { useSyncUser } from '../../hooks/useSyncUser';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import { OnboardingStorage, UserOnboardingData } from '../../utils/onboardingStorage';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,21 @@ export default function DashboardScreen() {
   
   // Trigger Firebase User Sync automatically on home screen mount
   const { isSynced, error } = useSyncUser();
+  const [userProfile, setUserProfile] = useState<UserOnboardingData | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      OnboardingStorage.getOnboardingData(user.id).then((data) => {
+        if (data) setUserProfile(data);
+      });
+    }
+  }, [user?.id]);
+
+  const targetCalories = userProfile?.nutritionPlan?.calories || 2200;
+  const targetProtein = userProfile?.nutritionPlan?.protein || 130;
+  const targetCarbs = userProfile?.nutritionPlan?.carbs || 250;
+  const targetFats = userProfile?.nutritionPlan?.fats || 70;
+  const waterLiters = userProfile?.nutritionPlan?.waterLiters || 3.0;
 
   // Formatting date
   const getTodayDateString = () => {
@@ -82,25 +98,25 @@ export default function DashboardScreen() {
           <View style={styles.calorieRingOuter}>
             <View style={styles.calorieRingInner}>
               <Text style={styles.calorieCount}>1,420</Text>
-              <Text style={styles.calorieUnit}>/ 2,200 kcal</Text>
+              <Text style={styles.calorieUnit}>/ {targetCalories.toLocaleString()} kcal</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.calorieDetails}>
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Consumed</Text>
-            <Text style={styles.detailVal}>1,750 kcal</Text>
+            <Text style={styles.detailLabel}>Target Goal</Text>
+            <Text style={styles.detailVal}>{targetCalories.toLocaleString()} kcal</Text>
           </View>
           <View style={styles.detailDivider} />
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Burned</Text>
-            <Text style={styles.detailVal}>330 kcal</Text>
+            <Text style={styles.detailLabel}>Water Goal</Text>
+            <Text style={styles.detailVal}>{waterLiters} L</Text>
           </View>
           <View style={styles.detailDivider} />
           <View style={styles.detailCol}>
-            <Text style={styles.detailLabel}>Remaining</Text>
-            <Text style={[styles.detailVal, { color: Colors.primary }]}>780 kcal</Text>
+            <Text style={styles.detailLabel}>Protein Goal</Text>
+            <Text style={[styles.detailVal, { color: Colors.primary }]}>{targetProtein}g</Text>
           </View>
         </View>
       </View>
@@ -114,9 +130,9 @@ export default function DashboardScreen() {
             <Ionicons name="fitness" size={18} color="#EF4444" />
           </View>
           <Text style={styles.macroName}>Protein</Text>
-          <Text style={styles.macroValue}>85g / 130g</Text>
+          <Text style={styles.macroValue}>85g / {targetProtein}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#EF4444', width: '65%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#EF4444', width: `${Math.min(100, Math.round((85 / targetProtein) * 100))}%` }]} />
           </View>
         </View>
 
@@ -126,9 +142,9 @@ export default function DashboardScreen() {
             <Ionicons name="nutrition" size={18} color="#F59E0B" />
           </View>
           <Text style={styles.macroName}>Carbs</Text>
-          <Text style={styles.macroValue}>180g / 250g</Text>
+          <Text style={styles.macroValue}>180g / {targetCarbs}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#F59E0B', width: '72%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#F59E0B', width: `${Math.min(100, Math.round((180 / targetCarbs) * 100))}%` }]} />
           </View>
         </View>
 
@@ -138,9 +154,9 @@ export default function DashboardScreen() {
             <Ionicons name="water" size={18} color="#3B82F6" />
           </View>
           <Text style={styles.macroName}>Fats</Text>
-          <Text style={styles.macroValue}>42g / 70g</Text>
+          <Text style={styles.macroValue}>42g / {targetFats}g</Text>
           <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { backgroundColor: '#3B82F6', width: '60%' }]} />
+            <View style={[styles.progressBarFill, { backgroundColor: '#3B82F6', width: `${Math.min(100, Math.round((42 / targetFats) * 100))}%` }]} />
           </View>
         </View>
       </View>

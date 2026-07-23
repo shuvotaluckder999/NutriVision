@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
+import { AINutritionPlan } from '../services/geminiService';
+
 export interface UserOnboardingData {
   gender: 'male' | 'female' | 'other' | string;
   goal: 'gain' | 'lose' | 'maintain' | string;
@@ -19,6 +21,7 @@ export interface UserOnboardingData {
     kg: string;
   };
   onboardingCompleted: boolean;
+  nutritionPlan?: AINutritionPlan;
   updatedAt: string;
 }
 
@@ -33,9 +36,13 @@ export const OnboardingStorage = {
   },
 
   /**
-   * Save onboarding data to AsyncStorage & Firestore
+   * Save onboarding data & AI generated nutrition plan to AsyncStorage & Firestore
    */
-  async saveOnboardingData(userId: string, data: Partial<UserOnboardingData>): Promise<void> {
+  async saveOnboardingData(
+    userId: string,
+    data: Partial<UserOnboardingData>,
+    nutritionPlan?: AINutritionPlan
+  ): Promise<void> {
     const fullData: UserOnboardingData = {
       gender: data.gender || '',
       goal: data.goal || '',
@@ -44,6 +51,7 @@ export const OnboardingStorage = {
       height: data.height || { feet: '5', inches: '9' },
       weight: data.weight || { kg: '70' },
       onboardingCompleted: true,
+      nutritionPlan: nutritionPlan || data.nutritionPlan,
       updatedAt: new Date().toISOString(),
     };
 
@@ -54,39 +62,42 @@ export const OnboardingStorage = {
       console.error('Error saving onboarding data to AsyncStorage:', e);
     }
 
-    // 2. Sync to Firebase Firestore
+    // 2. Sync to Firebase Firestore (Strictly for this user only)
     try {
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
 
-      if (userSnap.exists()) {
-        await updateDoc(userRef, {
-          onboardingCompleted: true,
-          gender: fullData.gender,
-          goal: fullData.goal,
-          workoutDays: fullData.workoutDays,
-          birthdate: fullData.birthdate,
-          height: fullData.height,
-          weight: fullData.weight,
-          updatedAt: fullData.updatedAt,
-        });
-      } else {
-        await setDoc(userRef, {
-          uid: userId,
-          onboardingCompleted: true,
-          gender: fullData.gender,
-          goal: fullData.goal,
-          workoutDays: fullData.workoutDays,
-          birthdate: fullData.birthdate,
-          height: fullData.height,
-          weight: fullData.weight,
-          createdAt: fullData.updatedAt,
-          updatedAt: fullData.updatedAt,
-        }, { merge: true });
+      const firestorePayload: any = {
+        onboardingCompleted: true,
+        gender: fullData.gender,
+        goal: fullData.goal,
+        workoutDays: fullData.workoutDays,
+        birthdate: fullData.birthdate,
+        height: fullData.height,
+        weight: fullData.weight,
+        updatedAt: fullData.updatedAt,
+      };
+
+      if (fullData.nutritionPlan) {
+        firestorePayload.nutritionPlan = fullData.nutritionPlan;
       }
-      console.log('Successfully saved onboarding data to Firestore!');
+
+      if (userSnap.exists()) {
+        await updateDoc(userRef, firestorePayload);
+      } else {
+        await setDoc(
+          userRef,
+          {
+            uid: userId,
+            ...firestorePayload,
+            createdAt: fullData.updatedAt,
+          },
+          { merge: true }
+        );
+      }
+      console.log('Successfully saved user profile & AI Nutrition Plan to Firestore for user:', userId);
     } catch (e) {
-      console.error('Error syncing onboarding data to Firestore:', e);
+      console.error('Error syncing user profile & AI Nutrition Plan to Firestore:', e);
     }
   },
 
