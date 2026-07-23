@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 30,
+    paddingBottom: 120,
   },
   header: {
     flexDirection: 'row',

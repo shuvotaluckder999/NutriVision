@@ -232,7 +232,7 @@ export default function OnboardingScreen() {
           {/* STEP 2: WHAT'S THE GOAL */}
           {currentStep === 2 && (
             <View style={styles.stepBox}>
-              <Text style={styles.title}>What's your goal?</Text>
+              <Text style={styles.title}>{"What's your goal?"}</Text>
               <Text style={styles.subtitle}>
                 Choose your primary objective to customize your daily target macros.
               </Text>

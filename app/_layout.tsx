@@ -1,5 +1,5 @@
 import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { tokenCache } from '../utils/cache';
 import { useSyncUser } from '../hooks/useSyncUser';
@@ -18,6 +18,7 @@ function InitialLayout() {
   const { user } = useUser();
   const segments = useSegments() as any;
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string }>();
 
   // Synchronize user data to Firebase Firestore automatically upon sign-in/up
   useSyncUser();
@@ -39,8 +40,9 @@ function InitialLayout() {
           router.replace('/onboarding' as any);
         }
       } else if (onboardingCompleted === true) {
-        // User ALREADY has information in database -> skip onboarding form & navigate to tabs
-        if (inAuthGroup || inOnboarding || segments.length === 0 || segments[0] === 'index') {
+        // User ALREADY has information in database -> skip onboarding form unless editing profile
+        const isEditing = params.mode === 'edit';
+        if (inAuthGroup || (inOnboarding && !isEditing) || segments.length === 0 || segments[0] === 'index') {
           if (!inGeneratingPlan) {
             router.replace('/(tabs)' as any);
           }
@@ -52,7 +54,7 @@ function InitialLayout() {
         router.replace('/sign-in' as any);
       }
     }
-  }, [isSignedIn, isLoaded, checkingOnboarding, onboardingCompleted, segments, router]);
+  }, [isSignedIn, isLoaded, checkingOnboarding, onboardingCompleted, segments, router, params.mode]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

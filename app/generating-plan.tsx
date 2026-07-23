@@ -155,11 +155,11 @@ export default function GeneratingPlanScreen() {
       setCurrentStepText('Consulting Gemini AI model for macro & hydration strategy...');
       
       const generatedPlan = await generateAINutritionPlan(selections);
-      await OnboardingStorage.saveOnboardingData(user.id, selections, generatedPlan);
+      const saveResult = await OnboardingStorage.saveOnboardingData(user.id, selections, generatedPlan);
 
       if (!isMounted) return;
       setPlanData(generatedPlan);
-      setIsSavedToFirebase(true);
+      setIsSavedToFirebase(saveResult.firestoreSaved);
       updateStepStatus(4, 'completed');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
