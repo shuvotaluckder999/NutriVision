@@ -5,6 +5,7 @@ import {
   Activity01Icon,
   AnalyticsUpIcon,
   CheckmarkCircle01Icon,
+  DropletIcon,
   Dumbbell01Icon,
   FireIcon,
   FlashIcon,
@@ -12,23 +13,21 @@ import {
   Restaurant01Icon,
   Shield01Icon,
   SparklesIcon,
-  DropletIcon,
 } from 'hugeicons-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
-  Dimensions,
   Easing,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { AINutritionPlan, generateAINutritionPlan, UserSelections } from '../services/geminiService';
 import { OnboardingStorage } from '../utils/onboardingStorage';
@@ -87,7 +86,7 @@ export default function GeneratingPlanScreen() {
         })
       ).start();
     }
-  }, [isGenerating]);
+  }, [isGenerating, spinAnim]);
 
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
@@ -153,7 +152,7 @@ export default function GeneratingPlanScreen() {
       updateStepStatus(4, 'loading');
       setProgressPercent(88);
       setCurrentStepText('Consulting Gemini AI model for macro & hydration strategy...');
-      
+
       const generatedPlan = await generateAINutritionPlan(selections);
       const saveResult = await OnboardingStorage.saveOnboardingData(user.id, selections, generatedPlan);
 
@@ -178,6 +177,7 @@ export default function GeneratingPlanScreen() {
     return () => {
       isMounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const handleFinish = () => {
