@@ -14,18 +14,20 @@ import * as Haptics from 'expo-haptics';
 import {
   Add01Icon,
   AnalyticsUpIcon,
-  Camera01Icon,
   Cancel01Icon,
   DropletIcon,
   Dumbbell01Icon,
   Home01Icon,
   Restaurant01Icon,
+  SparklesIcon,
   UserIcon,
 } from 'hugeicons-react-native';
 import { Colors } from '../../constants/Colors';
+import { AIChatModal } from '../../components/AIChatModal';
 
 function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const [quickActionVisible, setQuickActionVisible] = useState(false);
+  const [aiChatVisible, setAiChatVisible] = useState(false);
 
   const tabs = [
     {
@@ -148,13 +150,16 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             <View style={styles.actionGrid}>
               <TouchableOpacity
                 style={styles.actionCard}
-                onPress={() => handleActionSelect('Scan Food with AI')}
+                onPress={() => {
+                  setQuickActionVisible(false);
+                  setAiChatVisible(true);
+                }}
               >
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(81, 130, 216, 0.15)' }]}>
-                  <Camera01Icon size={24} color={Colors.primary} />
+                  <SparklesIcon size={24} color={Colors.primary} />
                 </View>
-                <Text style={styles.actionCardTitle}>AI Camera Scan</Text>
-                <Text style={styles.actionCardSub}>Instant calorie analysis</Text>
+                <Text style={styles.actionCardTitle}>AI Chatbot</Text>
+                <Text style={styles.actionCardSub}>Ask & calculate calories</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -193,6 +198,9 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Full-Screen ChatGPT-Style AI Nutrition Chatbot Modal */}
+      <AIChatModal visible={aiChatVisible} onClose={() => setAiChatVisible(false)} />
     </>
   );
 }

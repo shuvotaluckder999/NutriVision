@@ -1,21 +1,30 @@
-import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
+import { ClerkProvider, useAuth } from '@clerk/expo';
 import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { tokenCache } from '../utils/cache';
 import { useSyncUser } from '../hooks/useSyncUser';
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
+const publishableKey = (process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '').trim();
 
-if (!publishableKey || publishableKey === 'pk_test_ZXhjaXRpbmctcmluZ3RhaWwtMS5jbGVyay5hY2NvdW50cy5kZXYk') {
+if (!publishableKey || publishableKey.includes('your_clerk_publishable_key') || publishableKey === 'YOUR_CLERK_PUBLISHABLE_KEY') {
   console.warn(
-    '⚠️ Clerk Publishable Key is missing or using placeholder! Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZXhjaXRpbmctcmluZ3RhaWwtMS5jbGVyay5hY2NvdW50cy5kZXYk in your .env file.'
+    '⚠️ Clerk Publishable Key is missing or using placeholder! Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env file.'
   );
+}
+
+// Catch offline dynamic chunk rejection errors gracefully
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason && String(event.reason).includes('Clerk UI')) {
+      event.preventDefault();
+    }
+  });
 }
 
 function InitialLayout() {
   const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
   const segments = useSegments() as any;
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -68,8 +77,11 @@ function InitialLayout() {
 }
 
 export default function RootLayout() {
+  // Use tokenCache only on native mobile platforms; web manages session tokens via native cookies/storage
+  const cache = Platform.OS === 'web' ? undefined : tokenCache;
+
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+    <ClerkProvider tokenCache={cache} publishableKey={publishableKey}>
       <InitialLayout />
     </ClerkProvider>
   );

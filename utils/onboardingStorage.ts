@@ -185,5 +185,100 @@ export const OnboardingStorage = {
     }
 
     return null;
-  }
+  },
+
+  /**
+   * Update user target calorie goal in AsyncStorage and Firestore
+   */
+  async updateCalorieGoal(userId: string, newCalories: number): Promise<boolean> {
+    return this.updateNutritionGoals(userId, { calories: newCalories });
+  },
+
+  /**
+   * Update full or partial user nutrition targets (Calories, Protein, Carbs, Fats, Water) in AsyncStorage and Firestore
+   */
+  async updateNutritionGoals(
+    userId: string,
+    goals: {
+      calories?: number;
+      protein?: number;
+      carbs?: number;
+      fats?: number;
+      waterLiters?: number;
+    }
+  ): Promise<boolean> {
+    if (!userId) return false;
+    try {
+      let data = await this.getOnboardingData(userId);
+      if (!data) {
+        data = {
+          gender: 'other',
+          goal: 'maintain',
+          workoutDays: '3-7 Days',
+          birthdate: { day: '1', month: '1', year: '2000' },
+          height: { feet: '5', inches: '9' },
+          weight: { kg: '70' },
+          onboardingCompleted: true,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      const defaultCal = goals.calories || 2200;
+      if (!data.nutritionPlan) {
+        data.nutritionPlan = {
+          calories: goals.calories || 2200,
+          protein: goals.protein || Math.round((defaultCal * 0.25) / 4),
+          carbs: goals.carbs || Math.round((defaultCal * 0.50) / 4),
+          fats: goals.fats || Math.round((defaultCal * 0.25) / 9),
+          waterLiters: goals.waterLiters || 3.0,
+          waterGlasses: Math.round((goals.waterLiters || 3.0) * 4),
+          bmi: 22.4,
+          bmiCategory: 'Normal Weight',
+          bmr: 1680,
+          fitnessAdvice: 'Custom target goal updated by user',
+          mealTips: [],
+          workoutRecommendation: 'Balanced training',
+          generatedAt: new Date().toISOString(),
+        };
+      } else {
+        if (goals.calories !== undefined) data.nutritionPlan.calories = goals.calories;
+        if (goals.protein !== undefined) data.nutritionPlan.protein = goals.protein;
+        if (goals.carbs !== undefined) data.nutritionPlan.carbs = goals.carbs;
+        if (goals.fats !== undefined) data.nutritionPlan.fats = goals.fats;
+        if (goals.waterLiters !== undefined) {
+          data.nutritionPlan.waterLiters = goals.waterLiters;
+          data.nutritionPlan.waterGlasses = Math.round(goals.waterLiters * 4);
+        }
+      }
+      data.updatedAt = new Date().toISOString();
+
+      // Save locally
+      await AsyncStorage.setItem(this.getKey(userId), JSON.stringify(data));
+
+      // Sync to Firestore
+      try {
+        const userRef = doc(db, 'users', userId);
+        const firestoreUpdates: Record<string, any> = {
+          updatedAt: data.updatedAt,
+        };
+        if (goals.calories !== undefined) firestoreUpdates['nutritionPlan.calories'] = goals.calories;
+        if (goals.protein !== undefined) firestoreUpdates['nutritionPlan.protein'] = goals.protein;
+        if (goals.carbs !== undefined) firestoreUpdates['nutritionPlan.carbs'] = goals.carbs;
+        if (goals.fats !== undefined) firestoreUpdates['nutritionPlan.fats'] = goals.fats;
+        if (goals.waterLiters !== undefined) {
+          firestoreUpdates['nutritionPlan.waterLiters'] = goals.waterLiters;
+          firestoreUpdates['nutritionPlan.waterGlasses'] = Math.round(goals.waterLiters * 4);
+        }
+
+        await updateDoc(userRef, firestoreUpdates);
+      } catch (fsErr) {
+        console.warn('Firestore nutrition goal update note:', fsErr);
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Error in updateNutritionGoals:', e);
+      return false;
+    }
+  },
 };

@@ -1,7 +1,7 @@
 import { useOAuth, useSignIn } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useCallback, useState } from 'react';
 import {
@@ -39,7 +39,10 @@ export default function SignInScreen() {
 
   // Handle email & password sign in
   const onSignInPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      setErrorMessage('Authentication service is initializing. Please wait a moment.');
+      return;
+    }
     if (!email || !password) {
       setErrorMessage('Please fill in all fields');
       return;
@@ -62,8 +65,12 @@ export default function SignInScreen() {
         setErrorMessage('Authentication incomplete. Please contact support.');
       }
     } catch (err: any) {
-      console.error(err);
-      const message = err.errors?.[0]?.longMessage || 'Invalid email or password';
+      console.error('Sign in error:', err);
+      const message =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Invalid email or password';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -84,8 +91,12 @@ export default function SignInScreen() {
         await setOAuthActive({ session: createdSessionId });
       }
     } catch (err: any) {
-      console.error(err);
-      const message = err.errors?.[0]?.longMessage || 'Google authentication failed';
+      console.error('Google Sign-in error:', err);
+      const message =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Google authentication failed';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -94,7 +105,7 @@ export default function SignInScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}
       style={styles.container}
     >
       <ScrollView
@@ -177,6 +188,8 @@ export default function SignInScreen() {
               onChangeText={setPassword}
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
+              returnKeyType="go"
+              onSubmitEditing={onSignInPress}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
@@ -200,12 +213,12 @@ export default function SignInScreen() {
 
           {/* Sign In Button */}
           <TouchableOpacity
-            style={[styles.signInButton, isLoading && styles.disabledButton]}
+            style={[styles.signInButton, (isLoading || !isLoaded) && styles.disabledButton]}
             onPress={onSignInPress}
-            disabled={isLoading}
+            disabled={isLoading || !isLoaded}
             activeOpacity={0.8}
           >
-            {isLoading ? (
+            {isLoading || !isLoaded ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.signInButtonText}>Sign In</Text>
@@ -221,9 +234,9 @@ export default function SignInScreen() {
 
           {/* Google SSO Button */}
           <TouchableOpacity
-            style={[styles.socialButton, isLoading && styles.disabledButton]}
+            style={[styles.socialButton, (isLoading || !isLoaded) && styles.disabledButton]}
             onPress={onGoogleSignInPress}
-            disabled={isLoading}
+            disabled={isLoading || !isLoaded}
             activeOpacity={0.8}
           >
             <View style={styles.socialContent}>
@@ -236,9 +249,11 @@ export default function SignInScreen() {
         {/* Footer Navigation */}
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>{"Don't have an account? "}</Text>
-          <TouchableOpacity onPress={() => router.push('/sign-up' as any)} activeOpacity={0.7}>
-            <Text style={styles.footerLink}>Sign Up</Text>
-          </TouchableOpacity>
+          <Link href="/sign-up" asChild>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -262,32 +277,34 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoOuterCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: Colors.primary10,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.primary20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   logoInnerCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#1E293B',
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
   },
   logo: {
-    width: 44,
-    height: 44,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
   },
   appName: {
     fontSize: 28,
@@ -376,6 +393,7 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
@@ -398,6 +416,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 5,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   disabledButton: {
     opacity: 0.6,
@@ -431,6 +450,7 @@ const styles = StyleSheet.create({
     borderColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   socialContent: {
     flexDirection: 'row',
@@ -457,5 +477,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14,
     fontWeight: '700',
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });

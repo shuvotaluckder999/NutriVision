@@ -1,8 +1,14 @@
+import { useUser } from '@clerk/expo';
+import {
+  DropletIcon,
+  FireIcon,
+  FlashIcon,
+  SparklesIcon,
+  Target01Icon
+} from 'hugeicons-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -10,21 +16,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useUser } from '@clerk/expo';
-import {
-  Activity01Icon,
-  AnalyticsUpIcon,
-  DropletIcon,
-  FireIcon,
-  FlashIcon,
-  InformationCircleIcon,
-  SparklesIcon,
-  Target01Icon,
-} from 'hugeicons-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { OnboardingStorage, UserOnboardingData } from '../../utils/onboardingStorage';
-
-const { width } = Dimensions.get('window');
 
 export default function AnalysisScreen() {
   const { user } = useUser();

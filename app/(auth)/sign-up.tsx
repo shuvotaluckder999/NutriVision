@@ -12,7 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { useOAuth, useSignUp } from '@clerk/expo';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
@@ -46,7 +46,10 @@ export default function SignUpScreen() {
 
   // Process SignUp form submission
   const onSignUpPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      setErrorMessage('Authentication service is initializing. Please wait a moment.');
+      return;
+    }
     if (!fullName || !email || !password) {
       setErrorMessage('Please fill in all fields');
       return;
@@ -68,21 +71,29 @@ export default function SignUpScreen() {
 
     try {
       // Start the signup process
-      await signUp.create({
+      const signUpResult = await signUp.create({
         emailAddress: email,
         password,
         firstName,
         lastName,
       });
 
-      // Prepare email verification code
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      
-      // Set to true to show the OTP screen
-      setPendingVerification(true);
+      if (signUpResult.status === 'complete') {
+        await LocalStorage.setItem('user_signed_in', 'true');
+        await setActive({ session: signUpResult.createdSessionId });
+      } else {
+        // Prepare email verification code
+        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+        // Set to true to show the OTP screen
+        setPendingVerification(true);
+      }
     } catch (err: any) {
-      console.error(err);
-      const message = err.errors?.[0]?.longMessage || 'Registration failed. Please check your inputs.';
+      console.error('Sign up error:', err);
+      const message =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Registration failed. Please check your inputs.';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -91,7 +102,10 @@ export default function SignUpScreen() {
 
   // Verify the OTP code
   const onVerifyPress = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded) {
+      setErrorMessage('Authentication service is initializing. Please wait a moment.');
+      return;
+    }
     if (!verificationCode) {
       setErrorMessage('Please enter the verification code');
       return;
@@ -113,8 +127,12 @@ export default function SignUpScreen() {
         setErrorMessage('Verification incomplete. Please retry.');
       }
     } catch (err: any) {
-      console.error(err);
-      const message = err.errors?.[0]?.longMessage || 'Invalid verification code. Please try again.';
+      console.error('Verification error:', err);
+      const message =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Invalid verification code. Please try again.';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -135,8 +153,12 @@ export default function SignUpScreen() {
         await setOAuthActive({ session: createdSessionId });
       }
     } catch (err: any) {
-      console.error(err);
-      const message = err.errors?.[0]?.longMessage || 'Google signup failed';
+      console.error('Google Sign up error:', err);
+      const message =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        err.message ||
+        'Google signup failed';
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -145,7 +167,7 @@ export default function SignUpScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}
       style={styles.container}
     >
       <ScrollView
@@ -262,6 +284,8 @@ export default function SignUpScreen() {
                   onChangeText={setPassword}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
+                  returnKeyType="go"
+                  onSubmitEditing={onSignUpPress}
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
@@ -278,12 +302,12 @@ export default function SignUpScreen() {
 
               {/* Sign Up Button */}
               <TouchableOpacity
-                style={[styles.signUpButton, isLoading && styles.disabledButton]}
+                style={[styles.signUpButton, (isLoading || !isLoaded) && styles.disabledButton]}
                 onPress={onSignUpPress}
-                disabled={isLoading}
+                disabled={isLoading || !isLoaded}
                 activeOpacity={0.8}
               >
-                {isLoading ? (
+                {isLoading || !isLoaded ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={styles.signUpButtonText}>Sign Up</Text>
@@ -299,9 +323,9 @@ export default function SignUpScreen() {
 
               {/* Google SSO Button */}
               <TouchableOpacity
-                style={[styles.socialButton, isLoading && styles.disabledButton]}
+                style={[styles.socialButton, (isLoading || !isLoaded) && styles.disabledButton]}
                 onPress={onGoogleSignUpPress}
-                disabled={isLoading}
+                disabled={isLoading || !isLoaded}
                 activeOpacity={0.8}
               >
                 <View style={styles.socialContent}>
@@ -338,17 +362,19 @@ export default function SignUpScreen() {
                   onChangeText={setVerificationCode}
                   onFocus={() => setOtpFocused(true)}
                   onBlur={() => setOtpFocused(false)}
+                  returnKeyType="done"
+                  onSubmitEditing={onVerifyPress}
                 />
               </View>
 
               {/* Submit Code Button */}
               <TouchableOpacity
-                style={[styles.signUpButton, isLoading && styles.disabledButton]}
+                style={[styles.signUpButton, (isLoading || !isLoaded) && styles.disabledButton]}
                 onPress={onVerifyPress}
-                disabled={isLoading}
+                disabled={isLoading || !isLoaded}
                 activeOpacity={0.8}
               >
-                {isLoading ? (
+                {isLoading || !isLoaded ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={styles.signUpButtonText}>Verify Email</Text>
@@ -370,9 +396,11 @@ export default function SignUpScreen() {
         {/* Footer Navigation */}
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/sign-in' as any)} activeOpacity={0.7}>
-            <Text style={styles.footerLink}>Sign In</Text>
-          </TouchableOpacity>
+          <Link href="/sign-in" asChild>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text style={styles.footerLink}>Sign In</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -396,32 +424,34 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   logoOuterCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: Colors.primary10,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.primary20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   logoInnerCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#1E293B',
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
     elevation: 8,
+    overflow: 'hidden',
   },
   logo: {
-    width: 44,
-    height: 44,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
   },
   appName: {
     fontSize: 28,
@@ -511,6 +541,7 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 4,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   signUpButton: {
     backgroundColor: Colors.primary,
@@ -524,6 +555,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
     marginTop: 8,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   disabledButton: {
     opacity: 0.6,
@@ -557,6 +589,7 @@ const styles = StyleSheet.create({
     borderColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   socialContent: {
     flexDirection: 'row',
@@ -585,6 +618,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     padding: 8,
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   backButtonText: {
     color: '#9CA3AF',
@@ -604,5 +638,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14,
     fontWeight: '700',
+    ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
 });
