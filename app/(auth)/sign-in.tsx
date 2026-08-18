@@ -37,6 +37,13 @@ export default function SignInScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
+  // Auto-clear initialization notice once authentication service is ready
+  React.useEffect(() => {
+    if (isLoaded && errorMessage?.includes('initializing')) {
+      setErrorMessage(null);
+    }
+  }, [isLoaded, errorMessage]);
+
   // Handle email & password sign in
   const onSignInPress = async () => {
     if (!isLoaded) {
@@ -213,12 +220,12 @@ export default function SignInScreen() {
 
           {/* Sign In Button */}
           <TouchableOpacity
-            style={[styles.signInButton, (isLoading || !isLoaded) && styles.disabledButton]}
+            style={[styles.signInButton, isLoading && styles.disabledButton]}
             onPress={onSignInPress}
-            disabled={isLoading || !isLoaded}
+            disabled={isLoading}
             activeOpacity={0.8}
           >
-            {isLoading || !isLoaded ? (
+            {isLoading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <Text style={styles.signInButtonText}>Sign In</Text>
@@ -234,9 +241,9 @@ export default function SignInScreen() {
 
           {/* Google SSO Button */}
           <TouchableOpacity
-            style={[styles.socialButton, (isLoading || !isLoaded) && styles.disabledButton]}
+            style={[styles.socialButton, isLoading && styles.disabledButton]}
             onPress={onGoogleSignInPress}
-            disabled={isLoading || !isLoaded}
+            disabled={isLoading}
             activeOpacity={0.8}
           >
             <View style={styles.socialContent}>

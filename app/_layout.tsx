@@ -6,7 +6,11 @@ import { tokenCache } from '../utils/cache';
 import { useSyncUser } from '../hooks/useSyncUser';
 import { useOnboardingStatus } from '../hooks/useOnboardingStatus';
 
-const publishableKey = (process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '').trim();
+let rawPublishableKey = (process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '').trim();
+if (rawPublishableKey.endsWith('$')) {
+  rawPublishableKey = rawPublishableKey.slice(0, -1) + 'k';
+}
+const publishableKey = rawPublishableKey;
 
 if (!publishableKey || publishableKey.includes('your_clerk_publishable_key') || publishableKey === 'YOUR_CLERK_PUBLISHABLE_KEY') {
   console.warn(
@@ -33,7 +37,7 @@ function InitialLayout() {
   useSyncUser();
 
   // Check if onboarding form has been completed in database / AsyncStorage
-  const { checkingOnboarding, onboardingCompleted } = useOnboardingStatus();
+  const { checkingOnboarding, onboardingCompleted, refetchOnboardingStatus } = useOnboardingStatus();
 
   useEffect(() => {
     if (!isLoaded || checkingOnboarding) return;
@@ -46,7 +50,11 @@ function InitialLayout() {
       if (onboardingCompleted === false) {
         // User has not filled database onboarding form yet -> navigate to step form
         if (!inOnboarding && !inGeneratingPlan) {
-          router.replace('/onboarding' as any);
+          refetchOnboardingStatus().then((isDone) => {
+            if (!isDone) {
+              router.replace('/onboarding' as any);
+            }
+          });
         }
       } else if (onboardingCompleted === true) {
         // User ALREADY has information in database -> skip onboarding form unless editing profile
@@ -63,7 +71,7 @@ function InitialLayout() {
         router.replace('/sign-in' as any);
       }
     }
-  }, [isSignedIn, isLoaded, checkingOnboarding, onboardingCompleted, segments, router, params.mode]);
+  }, [isSignedIn, isLoaded, checkingOnboarding, onboardingCompleted, segments, router, params.mode, refetchOnboardingStatus]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

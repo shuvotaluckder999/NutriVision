@@ -44,6 +44,13 @@ export default function SignUpScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
+  // Auto-clear initialization notice once authentication service is ready
+  React.useEffect(() => {
+    if (isLoaded && errorMessage?.includes('initializing')) {
+      setErrorMessage(null);
+    }
+  }, [isLoaded, errorMessage]);
+
   // Process SignUp form submission
   const onSignUpPress = async () => {
     if (!isLoaded) {
@@ -302,12 +309,12 @@ export default function SignUpScreen() {
 
               {/* Sign Up Button */}
               <TouchableOpacity
-                style={[styles.signUpButton, (isLoading || !isLoaded) && styles.disabledButton]}
+                style={[styles.signUpButton, isLoading && styles.disabledButton]}
                 onPress={onSignUpPress}
-                disabled={isLoading || !isLoaded}
+                disabled={isLoading}
                 activeOpacity={0.8}
               >
-                {isLoading || !isLoaded ? (
+                {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={styles.signUpButtonText}>Sign Up</Text>
@@ -323,9 +330,9 @@ export default function SignUpScreen() {
 
               {/* Google SSO Button */}
               <TouchableOpacity
-                style={[styles.socialButton, (isLoading || !isLoaded) && styles.disabledButton]}
+                style={[styles.socialButton, isLoading && styles.disabledButton]}
                 onPress={onGoogleSignUpPress}
-                disabled={isLoading || !isLoaded}
+                disabled={isLoading}
                 activeOpacity={0.8}
               >
                 <View style={styles.socialContent}>
@@ -369,12 +376,12 @@ export default function SignUpScreen() {
 
               {/* Submit Code Button */}
               <TouchableOpacity
-                style={[styles.signUpButton, (isLoading || !isLoaded) && styles.disabledButton]}
+                style={[styles.signUpButton, isLoading && styles.disabledButton]}
                 onPress={onVerifyPress}
-                disabled={isLoading || !isLoaded}
+                disabled={isLoading}
                 activeOpacity={0.8}
               >
-                {isLoading || !isLoaded ? (
+                {isLoading ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text style={styles.signUpButtonText}>Verify Email</Text>

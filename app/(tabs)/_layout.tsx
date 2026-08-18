@@ -24,10 +24,12 @@ import {
 } from 'hugeicons-react-native';
 import { Colors } from '../../constants/Colors';
 import { AIChatModal } from '../../components/AIChatModal';
+import { LogMealModal } from '../../components/LogMealModal';
 
 function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const [quickActionVisible, setQuickActionVisible] = useState(false);
   const [aiChatVisible, setAiChatVisible] = useState(false);
+  const [logMealVisible, setLogMealVisible] = useState(false);
 
   const tabs = [
     {
@@ -164,7 +166,10 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
               <TouchableOpacity
                 style={styles.actionCard}
-                onPress={() => handleActionSelect('Log Meal')}
+                onPress={() => {
+                  setQuickActionVisible(false);
+                  setLogMealVisible(true);
+                }}
               >
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
                   <Restaurant01Icon size={24} color="#EF4444" />
@@ -201,6 +206,9 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
       {/* Full-Screen ChatGPT-Style AI Nutrition Chatbot Modal */}
       <AIChatModal visible={aiChatVisible} onClose={() => setAiChatVisible(false)} />
+
+      {/* Log Meal Modal */}
+      <LogMealModal visible={logMealVisible} onClose={() => setLogMealVisible(false)} />
     </>
   );
 }

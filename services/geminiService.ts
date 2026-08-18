@@ -252,86 +252,92 @@ export interface ChatMessage {
 }
 
 // Massive comprehensive offline food database for instant lookup
-const FOOD_DATABASE: Array<{
+export interface FoodItemData {
   keywords: string[];
   name: string;
+  bengaliName?: string;
   defaultPortion: string;
   caloriesPerUnit: number;
   proteinPerUnit: number;
   carbsPerUnit: number;
   fatsPerUnit: number;
-}> = [
+}
+
+export const FOOD_DATABASE: FoodItemData[] = [
   // Fruits & Vegetables
-  { keywords: ['apple', 'apples'], name: 'Fresh Apple', defaultPortion: '1 medium (180g)', caloriesPerUnit: 95, proteinPerUnit: 0.5, carbsPerUnit: 25, fatsPerUnit: 0.3 },
-  { keywords: ['banana', 'bananas'], name: 'Ripe Banana', defaultPortion: '1 medium (118g)', caloriesPerUnit: 105, proteinPerUnit: 1.3, carbsPerUnit: 27, fatsPerUnit: 0.4 },
-  { keywords: ['orange', 'oranges'], name: 'Fresh Orange', defaultPortion: '1 medium (130g)', caloriesPerUnit: 62, proteinPerUnit: 1.2, carbsPerUnit: 15, fatsPerUnit: 0.2 },
-  { keywords: ['mango', 'mangoes'], name: 'Ripe Mango', defaultPortion: '1 cup sliced (165g)', caloriesPerUnit: 99, proteinPerUnit: 1.4, carbsPerUnit: 25, fatsPerUnit: 0.6 },
-  { keywords: ['strawberry', 'strawberries'], name: 'Fresh Strawberries', defaultPortion: '1 cup (150g)', caloriesPerUnit: 49, proteinPerUnit: 1.0, carbsPerUnit: 11.7, fatsPerUnit: 0.5 },
-  { keywords: ['watermelon'], name: 'Watermelon', defaultPortion: '1 cup diced (152g)', caloriesPerUnit: 46, proteinPerUnit: 0.9, carbsPerUnit: 11.5, fatsPerUnit: 0.2 },
-  { keywords: ['avocado', 'avacado'], name: 'Fresh Avocado', defaultPortion: '1 medium (150g)', caloriesPerUnit: 240, proteinPerUnit: 3.0, carbsPerUnit: 12, fatsPerUnit: 22 },
-  { keywords: ['broccoli'], name: 'Steamed Broccoli', defaultPortion: '1 cup (150g)', caloriesPerUnit: 55, proteinPerUnit: 3.7, carbsPerUnit: 11, fatsPerUnit: 0.6 },
-  { keywords: ['spinach'], name: 'Fresh Spinach', defaultPortion: '1 cup (30g)', caloriesPerUnit: 7, proteinPerUnit: 0.9, carbsPerUnit: 1.1, fatsPerUnit: 0.1 },
-  { keywords: ['potato', 'potatoes', 'boiled potato'], name: 'Boiled Potato', defaultPortion: '1 medium (150g)', caloriesPerUnit: 130, proteinPerUnit: 3.0, carbsPerUnit: 30, fatsPerUnit: 0.2 },
-  { keywords: ['sweet potato', 'sweet potatoes'], name: 'Baked Sweet Potato', defaultPortion: '1 medium (114g)', caloriesPerUnit: 103, proteinPerUnit: 2.3, carbsPerUnit: 24, fatsPerUnit: 0.2 },
+  { keywords: ['apple', 'apples', 'আপেল', 'apel'], name: 'Fresh Apple', bengaliName: 'তাজা আপেল', defaultPortion: '1 medium (180g)', caloriesPerUnit: 95, proteinPerUnit: 0.5, carbsPerUnit: 25, fatsPerUnit: 0.3 },
+  { keywords: ['banana', 'bananas', 'কলা', 'kola'], name: 'Ripe Banana', bengaliName: 'পাকা কলা', defaultPortion: '1 medium (118g)', caloriesPerUnit: 105, proteinPerUnit: 1.3, carbsPerUnit: 27, fatsPerUnit: 0.4 },
+  { keywords: ['orange', 'oranges', 'কমলা', 'komla'], name: 'Fresh Orange', bengaliName: 'তাজা কমলা', defaultPortion: '1 medium (130g)', caloriesPerUnit: 62, proteinPerUnit: 1.2, carbsPerUnit: 15, fatsPerUnit: 0.2 },
+  { keywords: ['mango', 'mangoes', 'আম', 'aam'], name: 'Ripe Mango', bengaliName: 'পাকা আম', defaultPortion: '1 cup sliced (165g)', caloriesPerUnit: 99, proteinPerUnit: 1.4, carbsPerUnit: 25, fatsPerUnit: 0.6 },
+  { keywords: ['strawberry', 'strawberries', 'স্ট্রবেরি'], name: 'Fresh Strawberries', bengaliName: 'তাজা স্ট্রবেরি', defaultPortion: '1 cup (150g)', caloriesPerUnit: 49, proteinPerUnit: 1.0, carbsPerUnit: 11.7, fatsPerUnit: 0.5 },
+  { keywords: ['watermelon', 'তরমুজ', 'tormuj'], name: 'Watermelon', bengaliName: 'পাকা তরমুজ', defaultPortion: '1 cup diced (152g)', caloriesPerUnit: 46, proteinPerUnit: 0.9, carbsPerUnit: 11.5, fatsPerUnit: 0.2 },
+  { keywords: ['avocado', 'avacado', 'অ্যাভোকাডো'], name: 'Fresh Avocado', bengaliName: 'অ্যাভোকাডো', defaultPortion: '1 medium (150g)', caloriesPerUnit: 240, proteinPerUnit: 3.0, carbsPerUnit: 12, fatsPerUnit: 22 },
+  { keywords: ['broccoli', 'ব্রকলি'], name: 'Steamed Broccoli', bengaliName: 'সিদ্ধ ব্রকলি', defaultPortion: '1 cup (150g)', caloriesPerUnit: 55, proteinPerUnit: 3.7, carbsPerUnit: 11, fatsPerUnit: 0.6 },
+  { keywords: ['spinach', 'পালং শাক', 'শাক', 'shak'], name: 'Fresh Spinach', bengaliName: 'পালং শাক', defaultPortion: '1 cup (30g)', caloriesPerUnit: 7, proteinPerUnit: 0.9, carbsPerUnit: 1.1, fatsPerUnit: 0.1 },
+  { keywords: ['potato', 'potatoes', 'boiled potato', 'আলু', 'সিদ্ধ আলু', 'alu'], name: 'Boiled Potato', bengaliName: 'সিদ্ধ আলু', defaultPortion: '1 medium (150g)', caloriesPerUnit: 130, proteinPerUnit: 3.0, carbsPerUnit: 30, fatsPerUnit: 0.2 },
+  { keywords: ['sweet potato', 'sweet potatoes', 'মিষ্টি আলু'], name: 'Baked Sweet Potato', bengaliName: 'মিষ্টি আলু', defaultPortion: '1 medium (114g)', caloriesPerUnit: 103, proteinPerUnit: 2.3, carbsPerUnit: 24, fatsPerUnit: 0.2 },
   
   // Meats, Poultry & Seafood
-  { keywords: ['chicken breast', 'chicken', 'grilled chicken'], name: 'Grilled Chicken Breast', defaultPortion: '100g serving', caloriesPerUnit: 165, proteinPerUnit: 31, carbsPerUnit: 0, fatsPerUnit: 3.6 },
-  { keywords: ['chicken thigh'], name: 'Chicken Thigh', defaultPortion: '100g serving', caloriesPerUnit: 209, proteinPerUnit: 26, carbsPerUnit: 0, fatsPerUnit: 11 },
-  { keywords: ['steak', 'beef', 'beef steak', 'sirloin'], name: 'Sirloin Beef Steak', defaultPortion: '100g serving', caloriesPerUnit: 244, proteinPerUnit: 27, carbsPerUnit: 0, fatsPerUnit: 14 },
-  { keywords: ['ground beef', 'minced beef'], name: 'Lean Ground Beef', defaultPortion: '100g serving', caloriesPerUnit: 250, proteinPerUnit: 26, carbsPerUnit: 0, fatsPerUnit: 15 },
-  { keywords: ['mutton', 'lamb'], name: 'Cooked Mutton / Lamb', defaultPortion: '100g serving', caloriesPerUnit: 294, proteinPerUnit: 25, carbsPerUnit: 0, fatsPerUnit: 21 },
-  { keywords: ['salmon', 'salmon fillet'], name: 'Grilled Salmon', defaultPortion: '100g serving', caloriesPerUnit: 206, proteinPerUnit: 22, carbsPerUnit: 0, fatsPerUnit: 12 },
-  { keywords: ['tuna', 'canned tuna'], name: 'Canned Tuna in Water', defaultPortion: '1 can (165g)', caloriesPerUnit: 191, proteinPerUnit: 42, carbsPerUnit: 0, fatsPerUnit: 1.4 },
-  { keywords: ['shrimp', 'prawn', 'prawns'], name: 'Cooked Shrimp', defaultPortion: '100g serving', caloriesPerUnit: 99, proteinPerUnit: 24, carbsPerUnit: 0.2, fatsPerUnit: 0.3 },
-  { keywords: ['fish', 'fried fish', 'grilled fish'], name: 'Grilled White Fish', defaultPortion: '100g serving', caloriesPerUnit: 125, proteinPerUnit: 22, carbsPerUnit: 0, fatsPerUnit: 3 },
+  { keywords: ['chicken breast', 'chicken', 'grilled chicken', 'মুরগির মাংস', 'মুরগি', 'murgi'], name: 'Grilled Chicken Breast', bengaliName: 'গ্রিলড চিকেন ব্রেস্ট (মুরগির মাংস)', defaultPortion: '100g serving', caloriesPerUnit: 165, proteinPerUnit: 31, carbsPerUnit: 0, fatsPerUnit: 3.6 },
+  { keywords: ['chicken thigh', 'মুরগির লেগ', 'মুরগির মাংস'], name: 'Chicken Thigh', bengaliName: 'চিকেন থাই (মুরগির মাংস)', defaultPortion: '100g serving', caloriesPerUnit: 209, proteinPerUnit: 26, carbsPerUnit: 0, fatsPerUnit: 11 },
+  { keywords: ['steak', 'beef', 'beef steak', 'sirloin', 'গরুর মাংস', 'gorur mangsho', 'বিফ'], name: 'Sirloin Beef Steak', bengaliName: 'গরুর মাংস (বিফ স্টেক)', defaultPortion: '100g serving', caloriesPerUnit: 244, proteinPerUnit: 27, carbsPerUnit: 0, fatsPerUnit: 14 },
+  { keywords: ['ground beef', 'minced beef', 'কিম্বা', 'গরুর কিমা'], name: 'Lean Ground Beef', bengaliName: 'গরুর মাংসের কিমা', defaultPortion: '100g serving', caloriesPerUnit: 250, proteinPerUnit: 26, carbsPerUnit: 0, fatsPerUnit: 15 },
+  { keywords: ['mutton', 'lamb', 'খাসির মাংস', 'khasir mangsho'], name: 'Cooked Mutton / Lamb', bengaliName: 'রান্না করা খাসির মাংস', defaultPortion: '100g serving', caloriesPerUnit: 294, proteinPerUnit: 25, carbsPerUnit: 0, fatsPerUnit: 21 },
+  { keywords: ['salmon', 'salmon fillet', 'স্যামন মাছ'], name: 'Grilled Salmon', bengaliName: 'গ্রিলড স্যামন মাছ', defaultPortion: '100g serving', caloriesPerUnit: 206, proteinPerUnit: 22, carbsPerUnit: 0, fatsPerUnit: 12 },
+  { keywords: ['tuna', 'canned tuna', 'টুনা মাছ'], name: 'Canned Tuna in Water', bengaliName: 'টুনা মাছ', defaultPortion: '1 can (165g)', caloriesPerUnit: 191, proteinPerUnit: 42, carbsPerUnit: 0, fatsPerUnit: 1.4 },
+  { keywords: ['shrimp', 'prawn', 'prawns', 'চিংড়ি মাছ', 'chingri'], name: 'Cooked Shrimp', bengaliName: 'রান্না করা চিংড়ি মাছ', defaultPortion: '100g serving', caloriesPerUnit: 99, proteinPerUnit: 24, carbsPerUnit: 0.2, fatsPerUnit: 0.3 },
+  { keywords: ['fish', 'fried fish', 'grilled fish', 'মাছ', 'mach', 'mache'], name: 'Grilled White Fish', bengaliName: 'গ্রিলড সাদা মাছ', defaultPortion: '100g serving', caloriesPerUnit: 125, proteinPerUnit: 22, carbsPerUnit: 0, fatsPerUnit: 3 },
 
   // Eggs & Dairy
-  { keywords: ['egg', 'eggs', 'boiled egg'], name: 'Boiled Egg', defaultPortion: '1 large egg (50g)', caloriesPerUnit: 72, proteinPerUnit: 6.3, carbsPerUnit: 0.4, fatsPerUnit: 4.8 },
-  { keywords: ['fried egg'], name: 'Fried Egg with Oil', defaultPortion: '1 large egg', caloriesPerUnit: 90, proteinPerUnit: 6.3, carbsPerUnit: 0.4, fatsPerUnit: 7.0 },
-  { keywords: ['omelet', 'omelette'], name: '2-Egg Cheese Omelette', defaultPortion: '1 omelette', caloriesPerUnit: 240, proteinPerUnit: 14, carbsPerUnit: 2, fatsPerUnit: 19 },
-  { keywords: ['milk', 'glass of milk'], name: 'Whole Milk', defaultPortion: '1 glass (240ml)', caloriesPerUnit: 149, proteinPerUnit: 8, carbsPerUnit: 12, fatsPerUnit: 8 },
-  { keywords: ['greek yogurt', 'yogurt'], name: 'Plain Greek Yogurt', defaultPortion: '1 cup (170g)', caloriesPerUnit: 100, proteinPerUnit: 17, carbsPerUnit: 6, fatsPerUnit: 0.7 },
-  { keywords: ['cheese', 'cheddar cheese'], name: 'Cheddar Cheese', defaultPortion: '1 slice (28g)', caloriesPerUnit: 115, proteinPerUnit: 7, carbsPerUnit: 0.4, fatsPerUnit: 9.4 },
+  { keywords: ['egg', 'eggs', 'boiled egg', 'ডিম', 'সিদ্ধ ডিম', 'dim'], name: 'Boiled Egg', bengaliName: 'সিদ্ধ ডিম', defaultPortion: '1 large egg (50g)', caloriesPerUnit: 72, proteinPerUnit: 6.3, carbsPerUnit: 0.4, fatsPerUnit: 4.8 },
+  { keywords: ['fried egg', 'ডিম ভাজি', 'dim bhaji'], name: 'Fried Egg with Oil', bengaliName: 'ডিম পোচ / ডিম ভাজি', defaultPortion: '1 large egg', caloriesPerUnit: 90, proteinPerUnit: 6.3, carbsPerUnit: 0.4, fatsPerUnit: 7.0 },
+  { keywords: ['omelet', 'omelette', 'আমলেট'], name: '2-Egg Cheese Omelette', bengaliName: 'ডিম চিজ অমলেট', defaultPortion: '1 omelette', caloriesPerUnit: 240, proteinPerUnit: 14, carbsPerUnit: 2, fatsPerUnit: 19 },
+  { keywords: ['milk', 'glass of milk', 'দুধ', 'dudh'], name: 'Whole Milk', bengaliName: 'গরুর খাঁটি দুধ', defaultPortion: '1 glass (240ml)', caloriesPerUnit: 149, proteinPerUnit: 8, carbsPerUnit: 12, fatsPerUnit: 8 },
+  { keywords: ['greek yogurt', 'yogurt', 'দই', 'doi', 'টক দই'], name: 'Plain Greek Yogurt', bengaliName: 'মিষ্টি/টক দই', defaultPortion: '1 cup (170g)', caloriesPerUnit: 100, proteinPerUnit: 17, carbsPerUnit: 6, fatsPerUnit: 0.7 },
+  { keywords: ['cheese', 'cheddar cheese', 'পনির', 'ponir'], name: 'Cheddar Cheese', bengaliName: 'পনির', defaultPortion: '1 slice (28g)', caloriesPerUnit: 115, proteinPerUnit: 7, carbsPerUnit: 0.4, fatsPerUnit: 9.4 },
 
   // Grains, Rice, Noodles & Breads
-  { keywords: ['white rice', 'rice', 'steamed rice', 'cooked rice'], name: 'Cooked White Rice', defaultPortion: '1 cup (158g)', caloriesPerUnit: 205, proteinPerUnit: 4.2, carbsPerUnit: 45, fatsPerUnit: 0.4 },
-  { keywords: ['brown rice'], name: 'Cooked Brown Rice', defaultPortion: '1 cup (195g)', caloriesPerUnit: 216, proteinPerUnit: 5.0, carbsPerUnit: 45, fatsPerUnit: 1.8 },
-  { keywords: ['biryani', 'chicken biryani', 'beef biryani'], name: 'Chicken Biryani', defaultPortion: '1 plate (350g)', caloriesPerUnit: 520, proteinPerUnit: 28, carbsPerUnit: 65, fatsPerUnit: 16 },
-  { keywords: ['fried rice'], name: 'Egg Fried Rice', defaultPortion: '1 plate (250g)', caloriesPerUnit: 380, proteinPerUnit: 10, carbsPerUnit: 55, fatsPerUnit: 13 },
-  { keywords: ['oatmeal', 'oats', 'oat'], name: 'Cooked Oatmeal', defaultPortion: '1 cup (234g)', caloriesPerUnit: 166, proteinPerUnit: 5.9, carbsPerUnit: 28, fatsPerUnit: 3.6 },
-  { keywords: ['bread', 'slice of bread', 'toast'], name: 'Whole Wheat Bread', defaultPortion: '1 slice (35g)', caloriesPerUnit: 80, proteinPerUnit: 4, carbsPerUnit: 14, fatsPerUnit: 1 },
-  { keywords: ['roti', 'chapati', 'flatbread'], name: 'Whole Wheat Roti/Chapati', defaultPortion: '1 piece (40g)', caloriesPerUnit: 104, proteinPerUnit: 3.1, carbsPerUnit: 20, fatsPerUnit: 0.5 },
-  { keywords: ['naan', 'butter naan'], name: 'Butter Naan', defaultPortion: '1 piece (90g)', caloriesPerUnit: 260, proteinPerUnit: 8, carbsPerUnit: 42, fatsPerUnit: 7 },
-  { keywords: ['pasta', 'spaghetti', 'penne'], name: 'Cooked Pasta with Sauce', defaultPortion: '1 cup (200g)', caloriesPerUnit: 280, proteinPerUnit: 9, carbsPerUnit: 48, fatsPerUnit: 6 },
-  { keywords: ['ramen', 'noodles', 'instant noodles'], name: 'Instant Noodles / Ramen', defaultPortion: '1 pack (85g)', caloriesPerUnit: 380, proteinPerUnit: 8, carbsPerUnit: 52, fatsPerUnit: 16 },
+  { keywords: ['white rice', 'rice', 'steamed rice', 'cooked rice', 'ভাত', 'চাল', 'bhat'], name: 'Cooked White Rice', bengaliName: 'সিদ্ধ সাদা ভাত', defaultPortion: '1 cup (158g)', caloriesPerUnit: 205, proteinPerUnit: 4.2, carbsPerUnit: 45, fatsPerUnit: 0.4 },
+  { keywords: ['brown rice', 'লাল চালের ভাত'], name: 'Cooked Brown Rice', bengaliName: 'লাল চালের ভাত', defaultPortion: '1 cup (195g)', caloriesPerUnit: 216, proteinPerUnit: 5.0, carbsPerUnit: 45, fatsPerUnit: 1.8 },
+  { keywords: ['biryani', 'chicken biryani', 'beef biryani', 'বিরিয়ানি', 'biriyani'], name: 'Chicken Biryani', bengaliName: 'চিকেন বিরিয়ানি', defaultPortion: '1 plate (350g)', caloriesPerUnit: 520, proteinPerUnit: 28, carbsPerUnit: 65, fatsPerUnit: 16 },
+  { keywords: ['fried rice', 'ফ্রাইড রাইস'], name: 'Egg Fried Rice', bengaliName: 'ডিম ফ্রাইড রাইস', defaultPortion: '1 plate (250g)', caloriesPerUnit: 380, proteinPerUnit: 10, carbsPerUnit: 55, fatsPerUnit: 13 },
+  { keywords: ['dal', 'lentil', 'daal', 'ডাল', 'মসুর ডাল', 'ডাল ভাত'], name: 'Lentil Soup / Cooked Dal', bengaliName: 'রান্না করা মসুর ডাল', defaultPortion: '1 bowl (150g)', caloriesPerUnit: 120, proteinPerUnit: 8, carbsPerUnit: 18, fatsPerUnit: 2.5 },
+  { keywords: ['oatmeal', 'oats', 'oat', 'ওটস'], name: 'Cooked Oatmeal', bengaliName: 'রান্না করা ওটস', defaultPortion: '1 cup (234g)', caloriesPerUnit: 166, proteinPerUnit: 5.9, carbsPerUnit: 28, fatsPerUnit: 3.6 },
+  { keywords: ['bread', 'slice of bread', 'toast', 'পাউরুটি', 'pauruthi'], name: 'Whole Wheat Bread', bengaliName: 'পাউরুটি / টোস্ট', defaultPortion: '1 slice (35g)', caloriesPerUnit: 80, proteinPerUnit: 4, carbsPerUnit: 14, fatsPerUnit: 1 },
+  { keywords: ['roti', 'chapati', 'flatbread', 'রুটি', 'চাপাতি', 'roti'], name: 'Whole Wheat Roti/Chapati', bengaliName: 'আটার হাত রুটি', defaultPortion: '1 piece (40g)', caloriesPerUnit: 104, proteinPerUnit: 3.1, carbsPerUnit: 20, fatsPerUnit: 0.5 },
+  { keywords: ['paratha', 'porota', 'পরোটা'], name: 'Plain Paratha', bengaliName: 'তেলে ভাজা পরোটা', defaultPortion: '1 piece (60g)', caloriesPerUnit: 260, proteinPerUnit: 5, carbsPerUnit: 34, fatsPerUnit: 12 },
+  { keywords: ['naan', 'butter naan', 'নান রুটি'], name: 'Butter Naan', bengaliName: 'বাটার নান রুটি', defaultPortion: '1 piece (90g)', caloriesPerUnit: 260, proteinPerUnit: 8, carbsPerUnit: 42, fatsPerUnit: 7 },
+  { keywords: ['pasta', 'spaghetti', 'penne', 'পাস্তা'], name: 'Cooked Pasta with Sauce', bengaliName: 'পাস্তা', defaultPortion: '1 cup (200g)', caloriesPerUnit: 280, proteinPerUnit: 9, carbsPerUnit: 48, fatsPerUnit: 6 },
+  { keywords: ['ramen', 'noodles', 'instant noodles', 'নুডুলস'], name: 'Instant Noodles / Ramen', bengaliName: 'ইনস্ট্যান্ট নুডুলস', defaultPortion: '1 pack (85g)', caloriesPerUnit: 380, proteinPerUnit: 8, carbsPerUnit: 52, fatsPerUnit: 16 },
 
   // Fast Foods, Pizza & Street Food
-  { keywords: ['pizza', 'slice of pizza', 'pepperoni pizza'], name: 'Pepperoni Pizza Slice', defaultPortion: '1 slice (107g)', caloriesPerUnit: 285, proteinPerUnit: 12, carbsPerUnit: 36, fatsPerUnit: 10 },
-  { keywords: ['burger', 'cheeseburger', 'hamburger'], name: 'Cheeseburger', defaultPortion: '1 burger (150g)', caloriesPerUnit: 303, proteinPerUnit: 15, carbsPerUnit: 30, fatsPerUnit: 14 },
-  { keywords: ['french fries', 'fries'], name: 'Medium French Fries', defaultPortion: '1 medium (117g)', caloriesPerUnit: 365, proteinPerUnit: 4, carbsPerUnit: 48, fatsPerUnit: 17 },
-  { keywords: ['taco', 'tacos'], name: 'Beef Taco', defaultPortion: '1 taco (78g)', caloriesPerUnit: 170, proteinPerUnit: 9, carbsPerUnit: 13, fatsPerUnit: 9 },
-  { keywords: ['burrito'], name: 'Chicken Burrito', defaultPortion: '1 burrito (300g)', caloriesPerUnit: 550, proteinPerUnit: 32, carbsPerUnit: 62, fatsPerUnit: 18 },
-  { keywords: ['samosa', 'shingara'], name: 'Fried Vegetable Samosa', defaultPortion: '1 piece (50g)', caloriesPerUnit: 130, proteinPerUnit: 2.5, carbsPerUnit: 16, fatsPerUnit: 6.5 },
-  { keywords: ['shawarma', 'kebab roll'], name: 'Chicken Shawarma Wrap', defaultPortion: '1 wrap (250g)', caloriesPerUnit: 430, proteinPerUnit: 26, carbsPerUnit: 42, fatsPerUnit: 16 },
-  { keywords: ['sandwich'], name: 'Club Sandwich', defaultPortion: '1 sandwich (220g)', caloriesPerUnit: 380, proteinPerUnit: 22, carbsPerUnit: 38, fatsPerUnit: 15 },
-  { keywords: ['sushi'], name: 'Salmon Sushi Roll', defaultPortion: '6 pieces (180g)', caloriesPerUnit: 290, proteinPerUnit: 14, carbsPerUnit: 38, fatsPerUnit: 8 },
+  { keywords: ['pizza', 'slice of pizza', 'pepperoni pizza', 'পিজ্জা'], name: 'Pepperoni Pizza Slice', bengaliName: 'পিজ্জা', defaultPortion: '1 slice (107g)', caloriesPerUnit: 285, proteinPerUnit: 12, carbsPerUnit: 36, fatsPerUnit: 10 },
+  { keywords: ['burger', 'cheeseburger', 'hamburger', 'বার্গার'], name: 'Cheeseburger', bengaliName: 'বার্গার', defaultPortion: '1 burger (150g)', caloriesPerUnit: 303, proteinPerUnit: 15, carbsPerUnit: 30, fatsPerUnit: 14 },
+  { keywords: ['french fries', 'fries', 'ফ্রেঞ্চ ফ্রাই'], name: 'Medium French Fries', bengaliName: 'ফ্রেঞ্চ ফ্রাই', defaultPortion: '1 medium (117g)', caloriesPerUnit: 365, proteinPerUnit: 4, carbsPerUnit: 48, fatsPerUnit: 17 },
+  { keywords: ['taco', 'tacos'], name: 'Beef Taco', bengaliName: 'বিফ ট্যাকো', defaultPortion: '1 taco (78g)', caloriesPerUnit: 170, proteinPerUnit: 9, carbsPerUnit: 13, fatsPerUnit: 9 },
+  { keywords: ['burrito'], name: 'Chicken Burrito', bengaliName: 'চিকেন বুরিটো', defaultPortion: '1 burrito (300g)', caloriesPerUnit: 550, proteinPerUnit: 32, carbsPerUnit: 62, fatsPerUnit: 18 },
+  { keywords: ['samosa', 'shingara', 'সিঙ্গাড়া', 'সমুচা'], name: 'Fried Vegetable Samosa', bengaliName: 'সিঙ্গাড়া / সমুচা', defaultPortion: '1 piece (50g)', caloriesPerUnit: 130, proteinPerUnit: 2.5, carbsPerUnit: 16, fatsPerUnit: 6.5 },
+  { keywords: ['shawarma', 'kebab roll', 'শাওয়ারমা', 'কাবাব roll'], name: 'Chicken Shawarma Wrap', bengaliName: 'চিকেন শাওয়ারমা', defaultPortion: '1 wrap (250g)', caloriesPerUnit: 430, proteinPerUnit: 26, carbsPerUnit: 42, fatsPerUnit: 16 },
+  { keywords: ['sandwich', 'স্যান্ডউইচ'], name: 'Club Sandwich', bengaliName: 'ক্লাব স্যান্ডউইচ', defaultPortion: '1 sandwich (220g)', caloriesPerUnit: 380, proteinPerUnit: 22, carbsPerUnit: 38, fatsPerUnit: 15 },
+  { keywords: ['sushi', 'সুশি'], name: 'Salmon Sushi Roll', bengaliName: 'স্যামন সুশি রোল', defaultPortion: '6 pieces (180g)', caloriesPerUnit: 290, proteinPerUnit: 14, carbsPerUnit: 38, fatsPerUnit: 8 },
 
   // Snacks, Beverages & Desserts
-  { keywords: ['coke', 'coca cola', 'soda', 'pepsi'], name: 'Regular Soda / Cola', defaultPortion: '1 can (355ml)', caloriesPerUnit: 140, proteinPerUnit: 0, carbsPerUnit: 39, fatsPerUnit: 0 },
-  { keywords: ['orange juice', 'juice'], name: 'Fresh Orange Juice', defaultPortion: '1 glass (240ml)', caloriesPerUnit: 112, proteinPerUnit: 1.7, carbsPerUnit: 26, fatsPerUnit: 0.5 },
-  { keywords: ['coffee', 'latte', 'cappuccino'], name: 'Milk Coffee / Latte', defaultPortion: '1 cup (240ml)', caloriesPerUnit: 120, proteinPerUnit: 6, carbsPerUnit: 10, fatsPerUnit: 6 },
-  { keywords: ['protein shake', 'whey protein'], name: 'Whey Protein Shake', defaultPortion: '1 scoop with water (30g)', caloriesPerUnit: 120, proteinPerUnit: 24, carbsPerUnit: 3, fatsPerUnit: 1.5 },
-  { keywords: ['chocolate', 'chocolate bar'], name: 'Milk Chocolate Bar', defaultPortion: '1 bar (43g)', caloriesPerUnit: 235, proteinPerUnit: 3, carbsPerUnit: 26, fatsPerUnit: 13 },
-  { keywords: ['ice cream'], name: 'Vanilla Ice Cream', defaultPortion: '1 scoop (72g)', caloriesPerUnit: 137, proteinPerUnit: 2.3, carbsPerUnit: 16, fatsPerUnit: 7.2 },
-  { keywords: ['cake', 'chocolate cake'], name: 'Chocolate Cake Slice', defaultPortion: '1 slice (100g)', caloriesPerUnit: 370, proteinPerUnit: 5, carbsPerUnit: 50, fatsPerUnit: 18 },
-  { keywords: ['almonds', 'almond'], name: 'Raw Almonds', defaultPortion: '1 handful (28g / 23 nuts)', caloriesPerUnit: 164, proteinPerUnit: 6, carbsPerUnit: 6, fatsPerUnit: 14 },
-  { keywords: ['peanut butter'], name: 'Peanut Butter', defaultPortion: '2 tbsp (32g)', caloriesPerUnit: 188, proteinPerUnit: 8, carbsPerUnit: 7, fatsPerUnit: 16 },
+  { keywords: ['coke', 'coca cola', 'soda', 'pepsi', 'কোকা কোলা', 'সফট ড্রিংক'], name: 'Regular Soda / Cola', bengaliName: 'কোকা কোলা / সোডা', defaultPortion: '1 can (355ml)', caloriesPerUnit: 140, proteinPerUnit: 0, carbsPerUnit: 39, fatsPerUnit: 0 },
+  { keywords: ['orange juice', 'juice', 'জুস', 'ফলের রস'], name: 'Fresh Orange Juice', bengaliName: 'কমলার জুস', defaultPortion: '1 glass (240ml)', caloriesPerUnit: 112, proteinPerUnit: 1.7, carbsPerUnit: 26, fatsPerUnit: 0.5 },
+  { keywords: ['tea', 'cha', 'চা', 'দুধ চা', 'লাল চা'], name: 'Milk Tea / Milk Coffee', bengaliName: 'দুধ চা / কফি', defaultPortion: '1 cup (180ml)', caloriesPerUnit: 90, proteinPerUnit: 3, carbsPerUnit: 12, fatsPerUnit: 3 },
+  { keywords: ['coffee', 'latte', 'cappuccino', 'কফি'], name: 'Milk Coffee / Latte', bengaliName: 'কফি', defaultPortion: '1 cup (240ml)', caloriesPerUnit: 120, proteinPerUnit: 6, carbsPerUnit: 10, fatsPerUnit: 6 },
+  { keywords: ['protein shake', 'whey protein', 'প্রোটিন শেক'], name: 'Whey Protein Shake', bengaliName: 'হুই প্রোটিন শেক', defaultPortion: '1 scoop with water (30g)', caloriesPerUnit: 120, proteinPerUnit: 24, carbsPerUnit: 3, fatsPerUnit: 1.5 },
+  { keywords: ['chocolate', 'chocolate bar', 'চকলেট'], name: 'Milk Chocolate Bar', bengaliName: 'চকলেট বার', defaultPortion: '1 bar (43g)', caloriesPerUnit: 235, proteinPerUnit: 3, carbsPerUnit: 26, fatsPerUnit: 13 },
+  { keywords: ['ice cream', 'আইসক্রিম'], name: 'Vanilla Ice Cream', bengaliName: 'ভ্যানিলা আইসক্রিম', defaultPortion: '1 scoop (72g)', caloriesPerUnit: 137, proteinPerUnit: 2.3, carbsPerUnit: 16, fatsPerUnit: 7.2 },
+  { keywords: ['cake', 'chocolate cake', 'কেক'], name: 'Chocolate Cake Slice', bengaliName: 'চকলেট কেক', defaultPortion: '1 slice (100g)', caloriesPerUnit: 370, proteinPerUnit: 5, carbsPerUnit: 50, fatsPerUnit: 18 },
+  { keywords: ['almonds', 'almond', 'কাঠবাদাম', 'বাদাম'], name: 'Raw Almonds', bengaliName: 'কাঠবাদাম', defaultPortion: '1 handful (28g / 23 nuts)', caloriesPerUnit: 164, proteinPerUnit: 6, carbsPerUnit: 6, fatsPerUnit: 14 },
+  { keywords: ['peanut butter', 'বাদাম বাটার'], name: 'Peanut Butter', bengaliName: 'পিনাট বাটার', defaultPortion: '2 tbsp (32g)', caloriesPerUnit: 188, proteinPerUnit: 8, carbsPerUnit: 7, fatsPerUnit: 16 },
 ];
 
 /**
  * Intelligent Dynamic Food Calorie Estimator for ANY unlisted food name
  */
-function estimateDynamicFoodCalories(query: string): ChatMessage['foodMacroCard'] {
+export function estimateDynamicFoodCalories(query: string): ChatMessage['foodMacroCard'] {
   const lower = query.toLowerCase().trim();
   
   // Extract number from query if user specifies (e.g. "3 eggs" or "200g chicken")
@@ -353,19 +359,19 @@ function estimateDynamicFoodCalories(query: string): ChatMessage['foodMacroCard'
   let baseCarbs = 25;
   let baseFat = 8;
 
-  if (/salad|veggie|vegetable|fruit|apple|berry|cucumber|soup/.test(lower)) {
+  if (/salad|veggie|vegetable|fruit|apple|berry|cucumber|soup|আপেল|কলা|কমলা|আম|তরমুজ|শাক|সবজি/.test(lower)) {
     baseCal = 85; baseProt = 2.5; baseCarbs = 16; baseFat = 1.5;
-  } else if (/chicken|turkey|breast|tuna|fish|shrimp|prawn|egg|protein/.test(lower)) {
+  } else if (/chicken|turkey|breast|tuna|fish|shrimp|prawn|egg|protein|মুরগি|ডিম|মাছ|চিংড়ি/.test(lower)) {
     baseCal = 180; baseProt = 28; baseCarbs = 2; baseFat = 6;
-  } else if (/beef|steak|pork|mutton|lamb|burger|meatball/.test(lower)) {
+  } else if (/beef|steak|pork|mutton|lamb|burger|meatball|গরু|খাসি|মাংস/.test(lower)) {
     baseCal = 280; baseProt = 25; baseCarbs = 2; baseFat = 18;
-  } else if (/rice|pasta|bread|roti|noodle|spaghetti|oat|grain|corn|biryani/.test(lower)) {
+  } else if (/rice|pasta|bread|roti|noodle|spaghetti|oat|grain|corn|biryani|ভাত|রুটি|পরোটা|বিরিয়ানি|ডাল|নুডুলস/.test(lower)) {
     baseCal = 240; baseProt = 6; baseCarbs = 48; baseFat = 3;
-  } else if (/pizza|fries|fried|burger|shawarma|taco|burrito|samosa|cheeseburger/.test(lower)) {
+  } else if (/pizza|fries|fried|burger|shawarma|taco|burrito|samosa|cheeseburger|সিঙ্গাড়া|সমুচা|শাওয়ারমা|বার্গার|পিজ্জা/.test(lower)) {
     baseCal = 350; baseProt = 14; baseCarbs = 38; baseFat = 16;
-  } else if (/cake|donut|ice cream|chocolate|cookie|dessert|candy|sweet/.test(lower)) {
+  } else if (/cake|donut|ice cream|chocolate|cookie|dessert|candy|sweet|কেক|চকলেট|আইসক্রিম|মিষ্টি/.test(lower)) {
     baseCal = 320; baseProt = 4; baseCarbs = 45; baseFat = 14;
-  } else if (/shake|smoothie|juice|latte|milk|soda/.test(lower)) {
+  } else if (/shake|smoothie|juice|latte|milk|soda|দুধ|চা|কফি|জুস|সোডা/.test(lower)) {
     baseCal = 160; baseProt = 5; baseCarbs = 26; baseFat = 4;
   }
 
@@ -388,6 +394,66 @@ function estimateDynamicFoodCalories(query: string): ChatMessage['foodMacroCard'
     carbs: finalCarbs,
     fats: finalFat,
   };
+}
+
+/**
+ * Search the food database or estimate unlisted items dynamically
+ */
+export function searchFoodDatabase(query: string): Array<{
+  name: string;
+  bengaliName?: string;
+  defaultPortion: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+}> {
+  const trimmed = query.toLowerCase().trim();
+  if (!trimmed) {
+    // Return top popular items by default
+    return FOOD_DATABASE.map((item) => ({
+      name: item.name,
+      bengaliName: item.bengaliName,
+      defaultPortion: item.defaultPortion,
+      calories: item.caloriesPerUnit,
+      protein: item.proteinPerUnit,
+      carbs: item.carbsPerUnit,
+      fats: item.fatsPerUnit,
+    }));
+  }
+
+  // 1. Filter matching database items by English name, Bengali name, or keywords
+  const matches = FOOD_DATABASE.filter((item) =>
+    item.name.toLowerCase().includes(trimmed) ||
+    (item.bengaliName && item.bengaliName.toLowerCase().includes(trimmed)) ||
+    item.keywords.some((kw) => kw.toLowerCase().includes(trimmed) || trimmed.includes(kw.toLowerCase()))
+  ).map((item) => ({
+    name: item.name,
+    bengaliName: item.bengaliName,
+    defaultPortion: item.defaultPortion,
+    calories: item.caloriesPerUnit,
+    protein: item.proteinPerUnit,
+    carbs: item.carbsPerUnit,
+    fats: item.fatsPerUnit,
+  }));
+
+  // 2. If no direct match, add dynamic AI estimated food item
+  if (matches.length === 0) {
+    const estimated = estimateDynamicFoodCalories(query);
+    if (estimated) {
+      matches.push({
+        name: estimated.foodName,
+        bengaliName: estimated.foodName,
+        defaultPortion: estimated.portion,
+        calories: estimated.calories,
+        protein: estimated.protein,
+        carbs: estimated.carbs,
+        fats: estimated.fats,
+      });
+    }
+  }
+
+  return matches;
 }
 
 /**
@@ -601,5 +667,38 @@ INSTRUCTIONS:
       `3. **Food Calorie Queries:** You can type ANY food item (e.g. *"Calories in biryani"*, *"Calories in 2 slices of pizza"*, or *"Calories in 150g salmon"*) for an instant macro breakdown!\n\n` +
       `*Feel free to ask any specific health question or food calorie lookup!*`,
   };
+}
+
+/**
+ * AI Activity Calorie Burn Estimator based on Clinical MET (Metabolic Equivalent of Task) values
+ */
+export function calculateAIActivityBurn(
+  type: string,
+  durationMinutes: number,
+  weightKg: number = 70
+): number {
+  if (durationMinutes <= 0) return 0;
+
+  // Clinical MET values
+  let met = 6.0;
+  const t = type.toLowerCase();
+
+  if (t.includes('run') || t.includes('running')) {
+    met = 9.8;
+  } else if (t.includes('swim') || t.includes('swimming')) {
+    met = 8.0;
+  } else if (t.includes('cycle') || t.includes('cycling') || t.includes('bike')) {
+    met = 7.5;
+  } else if (t.includes('workout') || t.includes('gym') || t.includes('strength')) {
+    met = 6.0;
+  } else if (t.includes('walk') || t.includes('walking')) {
+    met = 3.8;
+  } else if (t.includes('yoga') || t.includes('stretch')) {
+    met = 3.0;
+  }
+
+  // Formula: Calories = MET * 3.5 * weightKg / 200 * durationMinutes
+  const burned = Math.round(met * 3.5 * (weightKg / 200) * durationMinutes);
+  return Math.max(10, burned);
 }
 
