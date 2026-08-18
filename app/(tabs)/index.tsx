@@ -20,15 +20,19 @@ import {
   CheckmarkCircle01Icon,
   PencilEdit01Icon,
   RefreshIcon,
+  Restaurant01Icon,
   SparklesIcon,
 } from 'hugeicons-react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Stop } from 'react-native-svg';
 import { HomeHeader } from '../../components/HomeHeader';
 import { AIChatModal } from '../../components/AIChatModal';
+import { LogMealModal } from '../../components/LogMealModal';
 import { Colors } from '../../constants/Colors';
 import { useSyncUser } from '../../hooks/useSyncUser';
 import { ActivityStorage, UserActivity } from '../../utils/activityStorage';
+import { MealStorage, LoggedMeal, AccumulatedConsumed } from '../../utils/mealStorage';
 import { OnboardingStorage, UserOnboardingData } from '../../utils/onboardingStorage';
+import { calculateAIActivityBurn } from '../../services/geminiService';
 
 export default function DashboardScreen() {
   const { user } = useUser();
@@ -58,11 +62,48 @@ export default function DashboardScreen() {
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [addActivityModalVisible, setAddActivityModalVisible] = useState(false);
 
+  // Logged Meals State
+  const [loggedMeals, setLoggedMeals] = useState<LoggedMeal[]>([]);
+  const [accumulatedConsumed, setAccumulatedConsumed] = useState<AccumulatedConsumed>({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+  });
+  const [loadingMeals, setLoadingMeals] = useState(true);
+  const [logMealModalVisible, setLogMealModalVisible] = useState(false);
+
   // New Activity Inputs
   const [newActivityTitle, setNewActivityTitle] = useState('Gym Workout');
   const [newActivityType, setNewActivityType] = useState<string>('workout');
   const [newActivityDuration, setNewActivityDuration] = useState('30');
   const [newActivityCalories, setNewActivityCalories] = useState('250');
+
+  const loadUserMeals = async () => {
+    if (!user?.id) return;
+    setLoadingMeals(true);
+    try {
+      const meals = await MealStorage.getUserMeals(user.id);
+      setLoggedMeals(meals);
+
+      const acc = await MealStorage.getAccumulatedConsumed(user.id);
+      const sumCal = meals.reduce((a, m) => a + (m.calories || 0), 0);
+      const sumP = parseFloat(meals.reduce((a, m) => a + (m.protein || 0), 0).toFixed(1));
+      const sumC = parseFloat(meals.reduce((a, m) => a + (m.carbs || 0), 0).toFixed(1));
+      const sumF = parseFloat(meals.reduce((a, m) => a + (m.fats || 0), 0).toFixed(1));
+
+      setAccumulatedConsumed({
+        calories: Math.max(acc.calories, sumCal),
+        protein: Math.max(acc.protein, sumP),
+        carbs: Math.max(acc.carbs, sumC),
+        fats: Math.max(acc.fats, sumF),
+      });
+    } catch (err) {
+      console.warn('Error loading user meals:', err);
+    } finally {
+      setLoadingMeals(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -86,15 +127,43 @@ export default function DashboardScreen() {
           setActivities(data);
         })
         .finally(() => setLoadingActivities(false));
+
+      // Load Logged Meals from Storage / Database for User
+      loadUserMeals();
     }
   }, [user?.id]);
 
+  const handleDeleteMeal = (mealId: string, foodName: string) => {
+    if (!user?.id) return;
+    Alert.alert('Delete Meal', `Are you sure you want to remove "${foodName}" from today's meals list?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          // Delete from UI list view (consumed calories & macro tracker values remain preserved)
+          await MealStorage.deleteMeal(user.id, mealId);
+          setLoggedMeals((prev) => prev.filter((m) => m.id !== mealId));
+        },
+      },
+    ]);
+  };
+
+  const userWeightKgNum = parseFloat(userProfile?.weight?.kg || '70') || 70;
+
+  const updateActivityBurnWithAI = (type: string, durStr: string) => {
+    const dur = parseInt(durStr, 10) || 30;
+    const burned = calculateAIActivityBurn(type, dur, userWeightKgNum);
+    setNewActivityCalories(burned.toString());
+  };
+
   const handleOpenAddActivityModal = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setNewActivityTitle('Gym Workout');
+    setNewActivityTitle('Strength & Gym Workout');
     setNewActivityType('workout');
     setNewActivityDuration('30');
-    setNewActivityCalories('250');
+    updateActivityBurnWithAI('workout', '30');
     setAddActivityModalVisible(true);
   };
 
@@ -109,16 +178,13 @@ export default function DashboardScreen() {
       swimming: 'Pool Swimming',
       yoga: 'Yoga & Stretching',
     };
-    const caloriesMap: Record<string, string> = {
-      workout: '280',
-      running: '350',
-      walking: '140',
-      cycling: '300',
-      swimming: '320',
-      yoga: '150',
-    };
     setNewActivityTitle(titles[type] || 'Workout Activity');
-    setNewActivityCalories(caloriesMap[type] || '200');
+    updateActivityBurnWithAI(type, newActivityDuration);
+  };
+
+  const handleDurationChange = (durStr: string) => {
+    setNewActivityDuration(durStr);
+    updateActivityBurnWithAI(newActivityType, durStr);
   };
 
   const handleSaveActivity = async () => {
@@ -211,10 +277,38 @@ export default function DashboardScreen() {
   const targetFats = customFats || aiRecommendedFats;
   const waterLiters = customWater || aiRecommendedWater;
 
-  const consumedCalories = 1420; // Consumed calories baseline
-  const consumedProtein = 85;
-  const consumedCarbs = 180;
-  const consumedFats = 42;
+  // 1. Food Calories & Macros Accumulated (never reduced when user deletes meals from UI list view)
+  const foodCaloriesConsumed = Math.max(
+    accumulatedConsumed.calories,
+    loggedMeals.reduce((acc, m) => acc + (m.calories || 0), 0)
+  );
+
+  const consumedProtein = parseFloat(
+    Math.max(
+      accumulatedConsumed.protein,
+      loggedMeals.reduce((acc, m) => acc + (m.protein || 0), 0)
+    ).toFixed(1)
+  );
+
+  const consumedCarbs = parseFloat(
+    Math.max(
+      accumulatedConsumed.carbs,
+      loggedMeals.reduce((acc, m) => acc + (m.carbs || 0), 0)
+    ).toFixed(1)
+  );
+
+  const consumedFats = parseFloat(
+    Math.max(
+      accumulatedConsumed.fats,
+      loggedMeals.reduce((acc, m) => acc + (m.fats || 0), 0)
+    ).toFixed(1)
+  );
+
+  // 2. Total Calories Burned from Recent Activities (Gym, Running, Walking, Cycling, Swimming, Yoga)
+  const totalBurnedCalories = activities.reduce((acc, a) => acc + (a.caloriesBurned || 0), 0);
+
+  // 3. Net Consumed Calories = Food Calories - Burned Calories (Activity burn decreases net consumed calories)
+  const consumedCalories = Math.max(0, foodCaloriesConsumed - totalBurnedCalories);
 
   const remainingCalories = Math.max(0, targetCalories - consumedCalories);
   const caloriePercent = Math.min(100, Math.round((consumedCalories / targetCalories) * 100));
@@ -383,15 +477,29 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          {/* Edit Target Goal Button */}
-          <TouchableOpacity
-            style={styles.editTargetBtn}
-            onPress={handleOpenEditModal}
-            activeOpacity={0.75}
-          >
-            <PencilEdit01Icon size={14} color="#FFFFFF" />
-            <Text style={styles.editTargetBtnText}>Edit Goals</Text>
-          </TouchableOpacity>
+          {/* Action Buttons: Log Meal & Edit Target Goal */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.editTargetBtn, { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#EF4444' }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setLogMealModalVisible(true);
+              }}
+              activeOpacity={0.75}
+            >
+              <Add01Icon size={14} color="#EF4444" />
+              <Text style={[styles.editTargetBtnText, { color: '#EF4444' }]}>Log Meal</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.editTargetBtn}
+              onPress={handleOpenEditModal}
+              activeOpacity={0.75}
+            >
+              <PencilEdit01Icon size={14} color="#FFFFFF" />
+              <Text style={styles.editTargetBtnText}>Edit Goals</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* AI Profile Context Banner (Calculated from Firebase User Database) */}
@@ -521,6 +629,103 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* Today's Logged Meals Section */}
+        <View style={styles.recentActivityContainer}>
+          <View style={styles.recentActivityHeader}>
+            <View style={styles.recentActivityTitleRow}>
+              <Restaurant01Icon size={18} color="#EF4444" />
+              <Text style={styles.recentActivityTitle}>Today's Logged Meals</Text>
+              {loggedMeals.length > 0 && (
+                <View style={[styles.activityBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                  <Text style={[styles.activityBadgeText, { color: '#EF4444' }]}>{loggedMeals.length} Logged</Text>
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.addActivityHeaderBtn, { backgroundColor: '#EF4444' }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setLogMealModalVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Add01Icon size={14} color="#FFFFFF" />
+              <Text style={styles.addActivityHeaderBtnText}>Log Meal</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingMeals ? (
+            <View style={styles.emptyStateCard}>
+              <Text style={styles.emptyStateSubtext}>Loading logged meals...</Text>
+            </View>
+          ) : loggedMeals.length === 0 ? (
+            <View style={styles.emptyStateCard}>
+              <View style={styles.emptyStateIconContainer}>
+                <View style={styles.emptyStateGlowCircle} />
+                <View style={[styles.emptyStateMainIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                  <Restaurant01Icon size={32} color="#EF4444" />
+                </View>
+              </View>
+
+              <Text style={styles.emptyStateTitle}>No Meals Logged Today</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Log your breakfast, lunch, dinner, or snacks to start tracking calories, protein, carbs & fats.
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.emptyStateAddBtn, { backgroundColor: '#EF4444' }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setLogMealModalVisible(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Add01Icon size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Text style={styles.emptyStateAddBtnText}>Log First Meal</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.activityList}>
+              {loggedMeals.map((meal) => (
+                <View key={meal.id} style={styles.activityItemCard}>
+                  <View style={[styles.activityItemIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                    <Restaurant01Icon size={20} color="#EF4444" />
+                  </View>
+
+                  <View style={styles.activityItemInfo}>
+                    <Text style={styles.activityItemTitle}>{meal.foodName}</Text>
+                    <View style={styles.activityItemMetaRow}>
+                      <Ionicons name="time-outline" size={12} color="#9CA3AF" />
+                      <Text style={styles.activityItemMeta}>
+                        {meal.portion} • {meal.timestamp} ({meal.mealType.toUpperCase()})
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                      P: {meal.protein}g | C: {meal.carbs}g | F: {meal.fats}g
+                    </Text>
+                  </View>
+
+                  <View style={styles.activityItemRight}>
+                    <View style={[styles.burnedCalorieBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                      <Ionicons name="flame" size={12} color="#EF4444" />
+                      <Text style={[styles.burnedCalorieText, { color: '#EF4444' }]}>+{meal.calories} kcal</Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.deleteActivityBtn}
+                      onPress={() => handleDeleteMeal(meal.id, meal.foodName)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="trash-outline" size={15} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Recent Activity Section (Below Daily Macro Targets) */}
         <View style={styles.recentActivityContainer}>
           {/* Section Header */}
@@ -647,6 +852,13 @@ export default function DashboardScreen() {
         onClose={() => setAiChatModalVisible(false)}
       />
 
+      {/* Log Meal Modal */}
+      <LogMealModal
+        visible={logMealModalVisible}
+        onClose={() => setLogMealModalVisible(false)}
+        onMealAdded={loadUserMeals}
+      />
+
       {/* Modal to Log New Activity */}
       <Modal
         visible={addActivityModalVisible}
@@ -744,7 +956,7 @@ export default function DashboardScreen() {
                   <TextInput
                     style={styles.calorieInput}
                     value={newActivityDuration}
-                    onChangeText={setNewActivityDuration}
+                    onChangeText={handleDurationChange}
                     keyboardType="numeric"
                     placeholder="30"
                     placeholderTextColor="#64748B"
@@ -759,7 +971,7 @@ export default function DashboardScreen() {
                       style={styles.quickChip}
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setNewActivityDuration(mins);
+                        handleDurationChange(mins);
                       }}
                     >
                       <Text style={styles.quickChipText}>{mins}m</Text>

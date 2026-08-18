@@ -281,4 +281,84 @@ export const OnboardingStorage = {
       return false;
     }
   },
+
+  /**
+   * Update full fitness profile parameters (Height, Weight, Goal, Gender, Workout Days, Birthdate)
+   * and recalculate AI Nutrition Targets automatically.
+   */
+  async updateFitnessProfile(
+    userId: string,
+    profileData: {
+      gender?: string;
+      goal?: string;
+      workoutDays?: string;
+      birthdate?: { day: string; month: string; year: string };
+      height?: { feet: string; inches: string };
+      weight?: { kg: string };
+    }
+  ): Promise<UserOnboardingData | null> {
+    if (!userId) return null;
+    try {
+      let current = await this.getOnboardingData(userId);
+      if (!current) {
+        current = {
+          gender: profileData.gender || 'male',
+          goal: profileData.goal || 'maintain',
+          workoutDays: profileData.workoutDays || '3-7 Days',
+          birthdate: profileData.birthdate || { day: '15', month: '06', year: '1998' },
+          height: profileData.height || { feet: '5', inches: '9' },
+          weight: profileData.weight || { kg: '70' },
+          onboardingCompleted: true,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        if (profileData.gender) current.gender = profileData.gender;
+        if (profileData.goal) current.goal = profileData.goal;
+        if (profileData.workoutDays) current.workoutDays = profileData.workoutDays;
+        if (profileData.birthdate) current.birthdate = profileData.birthdate;
+        if (profileData.height) current.height = profileData.height;
+        if (profileData.weight) current.weight = profileData.weight;
+        current.updatedAt = new Date().toISOString();
+      }
+
+      // Import calculateFallbackMetrics dynamically or use metabolic math
+      const selections = {
+        gender: current.gender,
+        goal: current.goal,
+        workoutDays: current.workoutDays,
+        birthdate: current.birthdate,
+        height: current.height,
+        weight: current.weight,
+      };
+
+      const { calculateFallbackMetrics } = require('../services/geminiService');
+      const recalculatedPlan = calculateFallbackMetrics(selections);
+      current.nutritionPlan = recalculatedPlan;
+
+      // Save locally
+      await AsyncStorage.setItem(this.getKey(userId), JSON.stringify(current));
+
+      // Sync to Firestore
+      try {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+          gender: current.gender,
+          goal: current.goal,
+          workoutDays: current.workoutDays,
+          birthdate: current.birthdate,
+          height: current.height,
+          weight: current.weight,
+          nutritionPlan: current.nutritionPlan,
+          updatedAt: current.updatedAt,
+        });
+      } catch (fsErr) {
+        console.warn('Firestore update fitness profile sync note:', fsErr);
+      }
+
+      return current;
+    } catch (err) {
+      console.error('Error updating fitness profile:', err);
+      return null;
+    }
+  },
 };

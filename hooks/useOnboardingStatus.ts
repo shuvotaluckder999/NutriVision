@@ -8,17 +8,18 @@ export function useOnboardingStatus() {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [onboardingData, setOnboardingData] = useState<UserOnboardingData | null>(null);
 
-  const checkStatus = async () => {
+  const checkStatus = async (): Promise<boolean> => {
     if (!isLoaded || !isSignedIn || !user) {
       setOnboardingCompleted(null);
       setOnboardingData(null);
       setCheckingOnboarding(false);
-      return;
+      return false;
     }
 
     setCheckingOnboarding(true);
+    let isCompleted = false;
     try {
-      const isCompleted = await OnboardingStorage.isOnboardingCompleted(user.id);
+      isCompleted = await OnboardingStorage.isOnboardingCompleted(user.id);
       setOnboardingCompleted(isCompleted);
 
       if (isCompleted) {
@@ -28,9 +29,11 @@ export function useOnboardingStatus() {
     } catch (e) {
       console.error('Error checking onboarding status:', e);
       setOnboardingCompleted(false);
+      isCompleted = false;
     } finally {
       setCheckingOnboarding(false);
     }
+    return isCompleted;
   };
 
   useEffect(() => {
