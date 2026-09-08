@@ -18,6 +18,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Activity01Icon,
   BodyWeightIcon,
@@ -36,6 +37,7 @@ import { useOnboardingStatus } from '../../hooks/useOnboardingStatus';
 import { OnboardingStorage, UserOnboardingData } from '../../utils/onboardingStorage';
 import { NotificationService, NotificationSettings } from '../../utils/notificationService';
 import { LocalStorage } from '../../utils/storage';
+import { useTheme } from '../../context/ThemeContext';
 
 const AVATAR_PRESETS = [
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
@@ -49,6 +51,7 @@ export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
   const router = useRouter();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const { checkingOnboarding, onboardingData: initialOnboarding, refetchOnboardingStatus } = useOnboardingStatus();
   const [profileData, setProfileData] = useState<UserOnboardingData | null>(initialOnboarding);
@@ -197,6 +200,36 @@ export default function ProfileScreen() {
     }
   };
 
+  const handlePickImageFromGallery = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'Permission to access your photo gallery is required to choose a profile photo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const photoUri = asset.base64
+          ? `data:image/jpeg;base64,${asset.base64}`
+          : asset.uri;
+        setSelectedAvatar(photoUri);
+      }
+    } catch (err) {
+      console.error('Error picking image from gallery:', err);
+      Alert.alert('Gallery Error', 'Could not select photo from gallery. Please try again.');
+    }
+  };
+
   const handleToggleNotifSetting = async (key: keyof NotificationSettings) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const updated = { ...notifSettings, [key]: !notifSettings[key] };
@@ -252,7 +285,7 @@ export default function ProfileScreen() {
 
   if (checkingOnboarding) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
@@ -291,11 +324,11 @@ export default function ProfileScreen() {
     : '70 kg';
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>My Profile</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <Text style={[styles.title, { color: theme.text }]}>My Profile</Text>
 
       {/* User Card */}
-      <View style={styles.profileCard}>
+      <View style={[styles.profileCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.profileHeader}>
           <TouchableOpacity
             style={styles.avatarContainer}
@@ -312,7 +345,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.nameText}>{fullName}</Text>
+            <Text style={[styles.nameText, { color: theme.text }]}>{fullName}</Text>
             <TouchableOpacity
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -324,115 +357,177 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.emailText}>{emailAddress}</Text>
-          <View style={styles.memberBadge}>
-            <Text style={styles.memberText}>Member since {memberSince}</Text>
+          <Text style={[styles.emailText, { color: theme.textMuted }]}>{emailAddress}</Text>
+          <View style={[styles.memberBadge, { backgroundColor: theme.cardSecondary }]}>
+            <Text style={[styles.memberText, { color: theme.textMuted }]}>Member since {memberSince}</Text>
           </View>
         </View>
       </View>
 
       {/* Fitness Profile Settings */}
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Fitness Profile</Text>
-        <TouchableOpacity style={styles.editBtn} onPress={handleOpenEditFitness}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Fitness Profile</Text>
+        <TouchableOpacity style={[styles.editBtn, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]} onPress={handleOpenEditFitness}>
           <PencilEdit01Icon size={12} color={Colors.primary} style={{ marginRight: 4 }} />
           <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.goalCard}>
+      <View style={[styles.goalCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
         {/* Goal */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <Target01Icon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Fitness Goal</Text>
-              <Text style={styles.goalValue}>{formatGoal(profileData?.goal)}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Fitness Goal</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{formatGoal(profileData?.goal)}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         {/* Workout Frequency */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <Activity01Icon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Workout Frequency</Text>
-              <Text style={styles.goalValue}>{profileData?.workoutDays || '3-7 Days'}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Workout Frequency</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{profileData?.workoutDays || '3-7 Days'}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         {/* Gender & Birthdate */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <UserIcon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Gender</Text>
-              <Text style={styles.goalValue}>{formatGender(profileData?.gender)}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Gender</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{formatGender(profileData?.gender)}</Text>
             </View>
           </View>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <Calendar01Icon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Birthdate</Text>
-              <Text style={styles.goalValue}>{birthdateStr}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Birthdate</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{birthdateStr}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         {/* Height & Weight */}
         <View style={styles.goalRow}>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <RulerIcon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Height</Text>
-              <Text style={styles.goalValue}>{heightStr}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Height</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{heightStr}</Text>
             </View>
           </View>
           <View style={styles.goalItem}>
-            <View style={styles.iconBg}>
+            <View style={[styles.iconBg, { backgroundColor: theme.primaryBg }]}>
               <BodyWeightIcon size={20} color={Colors.primary} />
             </View>
             <View style={styles.goalTextContainer}>
-              <Text style={styles.goalLabel}>Weight</Text>
-              <Text style={styles.goalValue}>{weightStr}</Text>
+              <Text style={[styles.goalLabel, { color: theme.textMuted }]}>Weight</Text>
+              <Text style={[styles.goalValue, { color: theme.text }]}>{weightStr}</Text>
             </View>
           </View>
         </View>
       </View>
 
       {/* Account Settings Menu */}
-      <Text style={styles.sectionTitle}>Account Settings</Text>
-      <View style={styles.menuContainer}>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Account Settings</Text>
+      <View style={[styles.menuContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        {/* Menu Item 0: Dark / Light Mode Switch & Segmented Control */}
+        <View style={[styles.menuItem, { flexDirection: 'column', alignItems: 'stretch', gap: 12, paddingVertical: 14 }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={styles.menuItemLeft}>
+              <View style={[styles.menuIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                <Ionicons name={isDark ? 'moon' : 'sunny'} size={18} color={isDark ? '#F59E0B' : '#8B5CF6'} />
+              </View>
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[styles.menuText, { color: theme.text }]}>App Display Theme</Text>
+                <Text style={{ fontSize: 11, color: theme.textMuted }}>{isDark ? 'Dark Mode (Obsidian Theme)' : 'Light Mode (Warm Beige Theme)'}</Text>
+              </View>
+            </View>
+            <Switch
+              value={isDark}
+              onValueChange={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                toggleTheme();
+              }}
+              trackColor={{ false: '#CBD5E1', true: Colors.primary }}
+            />
+          </View>
+
+          {/* Light Mode / Dark Mode Selection Buttons */}
+          <View style={{ flexDirection: 'row', gap: 8, backgroundColor: theme.cardSecondary, padding: 4, borderRadius: 12, borderWidth: 1, borderColor: theme.border }}>
+            <TouchableOpacity
+              style={[
+                { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 9, gap: 6 },
+                !isDark && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+              ]}
+              onPress={() => {
+                if (isDark) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  toggleTheme();
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="sunny" size={16} color={!isDark ? '#F59E0B' : theme.textMuted} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: !isDark ? theme.text : theme.textMuted }}>Light Mode</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 9, gap: 6 },
+                isDark && { backgroundColor: theme.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 }
+              ]}
+              onPress={() => {
+                if (!isDark) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  toggleTheme();
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="moon" size={16} color={isDark ? '#8B5CF6' : theme.textMuted} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? theme.text : theme.textMuted }}>Dark Mode</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
+
         {/* Menu Item 1: Privacy & Security */}
         <TouchableOpacity style={styles.menuItem} onPress={() => setPrivacyModalVisible(true)}>
           <View style={styles.menuItemLeft}>
             <View style={[styles.menuIconBg, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
               <Ionicons name="shield-checkmark" size={18} color="#3B82F6" />
             </View>
-            <Text style={styles.menuText}>Privacy & Security</Text>
+            <Text style={[styles.menuText, { color: theme.text }]}>Privacy & Security</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
-        <View style={styles.menuDivider} />
+        <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
 
         {/* Menu Item 2: Push Notifications */}
         <TouchableOpacity style={styles.menuItem} onPress={() => setNotificationsModalVisible(true)}>
@@ -440,12 +535,12 @@ export default function ProfileScreen() {
             <View style={[styles.menuIconBg, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
               <Ionicons name="notifications" size={18} color="#8B5CF6" />
             </View>
-            <Text style={styles.menuText}>Push Notifications</Text>
+            <Text style={[styles.menuText, { color: theme.text }]}>Push Notifications</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
-        <View style={styles.menuDivider} />
+        <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
 
         {/* Menu Item 3: Help & Support */}
         <TouchableOpacity style={styles.menuItem} onPress={() => setSupportModalVisible(true)}>
@@ -453,9 +548,9 @@ export default function ProfileScreen() {
             <View style={[styles.menuIconBg, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
               <Ionicons name="help-circle" size={18} color="#F59E0B" />
             </View>
-            <Text style={styles.menuText}>Help & Support</Text>
+            <Text style={[styles.menuText, { color: theme.text }]}>Help & Support</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#6B7280" />
+          <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -467,18 +562,18 @@ export default function ProfileScreen() {
 
       {/* MODAL 1: EDIT FITNESS PROFILE */}
       <Modal visible={editFitnessModalVisible} transparent animationType="slide" onRequestClose={() => setEditFitnessModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Fitness Profile</Text>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setEditFitnessModalVisible(false)}>
-                <Cancel01Icon size={18} color="#9CA3AF" />
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Fitness Profile</Text>
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={() => setEditFitnessModalVisible(false)}>
+                <Cancel01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ maxHeight: 460 }} showsVerticalScrollIndicator={false}>
               {/* Primary Goal */}
-              <Text style={styles.inputSectionTitle}>Fitness Goal</Text>
+              <Text style={[styles.inputSectionTitle, { color: theme.text }]}>Fitness Goal</Text>
               <View style={styles.chipOptionRow}>
                 {[
                   { id: 'gain', label: 'Gain Weight' },
@@ -487,30 +582,42 @@ export default function ProfileScreen() {
                 ].map((item) => (
                   <TouchableOpacity
                     key={item.id}
-                    style={[styles.selectChip, editGoal === item.id && styles.selectChipActive]}
+                    style={[
+                      styles.selectChip,
+                      { backgroundColor: theme.cardSecondary, borderColor: theme.border },
+                      editGoal === item.id && styles.selectChipActive,
+                    ]}
                     onPress={() => setEditGoal(item.id as any)}
                   >
-                    <Text style={[styles.selectChipText, editGoal === item.id && styles.selectChipTextActive]}>{item.label}</Text>
+                    <Text style={[styles.selectChipText, { color: theme.textMuted }, editGoal === item.id && styles.selectChipTextActive]}>
+                      {item.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Workout Frequency */}
-              <Text style={styles.inputSectionTitle}>Workout Frequency</Text>
+              <Text style={[styles.inputSectionTitle, { color: theme.text }]}>Workout Frequency</Text>
               <View style={styles.chipOptionRow}>
                 {['2-3 days', '3-7 Days', '7-15 Days', '1 month'].map((item) => (
                   <TouchableOpacity
                     key={item}
-                    style={[styles.selectChip, editWorkoutDays === item && styles.selectChipActive]}
+                    style={[
+                      styles.selectChip,
+                      { backgroundColor: theme.cardSecondary, borderColor: theme.border },
+                      editWorkoutDays === item && styles.selectChipActive,
+                    ]}
                     onPress={() => setEditWorkoutDays(item)}
                   >
-                    <Text style={[styles.selectChipText, editWorkoutDays === item && styles.selectChipTextActive]}>{item}</Text>
+                    <Text style={[styles.selectChipText, { color: theme.textMuted }, editWorkoutDays === item && styles.selectChipTextActive]}>
+                      {item}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Gender */}
-              <Text style={styles.inputSectionTitle}>Gender</Text>
+              <Text style={[styles.inputSectionTitle, { color: theme.text }]}>Gender</Text>
               <View style={styles.chipOptionRow}>
                 {[
                   { id: 'male', label: 'Male' },
@@ -519,48 +626,54 @@ export default function ProfileScreen() {
                 ].map((item) => (
                   <TouchableOpacity
                     key={item.id}
-                    style={[styles.selectChip, editGender === item.id && styles.selectChipActive]}
+                    style={[
+                      styles.selectChip,
+                      { backgroundColor: theme.cardSecondary, borderColor: theme.border },
+                      editGender === item.id && styles.selectChipActive,
+                    ]}
                     onPress={() => setEditGender(item.id)}
                   >
-                    <Text style={[styles.selectChipText, editGender === item.id && styles.selectChipTextActive]}>{item.label}</Text>
+                    <Text style={[styles.selectChipText, { color: theme.textMuted }, editGender === item.id && styles.selectChipTextActive]}>
+                      {item.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Height & Weight Inputs */}
-              <Text style={styles.inputSectionTitle}>Height & Weight</Text>
+              <Text style={[styles.inputSectionTitle, { color: theme.text }]}>Height & Weight</Text>
               <View style={styles.gridInputRow}>
                 <View style={styles.inputBox}>
-                  <Text style={styles.inputFieldLabel}>Feet (ft)</Text>
+                  <Text style={[styles.inputFieldLabel, { color: theme.textMuted }]}>Feet (ft)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
                     value={editFeet}
                     onChangeText={setEditFeet}
                     keyboardType="numeric"
                     placeholder="5"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={theme.textMuted}
                   />
                 </View>
                 <View style={styles.inputBox}>
-                  <Text style={styles.inputFieldLabel}>Inches (in)</Text>
+                  <Text style={[styles.inputFieldLabel, { color: theme.textMuted }]}>Inches (in)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
                     value={editInches}
                     onChangeText={setEditInches}
                     keyboardType="numeric"
                     placeholder="9"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={theme.textMuted}
                   />
                 </View>
                 <View style={styles.inputBox}>
-                  <Text style={styles.inputFieldLabel}>Weight (kg)</Text>
+                  <Text style={[styles.inputFieldLabel, { color: theme.textMuted }]}>Weight (kg)</Text>
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
                     value={editWeightKg}
                     onChangeText={setEditWeightKg}
                     keyboardType="numeric"
                     placeholder="70"
-                    placeholderTextColor="#64748B"
+                    placeholderTextColor={theme.textMuted}
                   />
                 </View>
               </View>
@@ -579,26 +692,55 @@ export default function ProfileScreen() {
 
       {/* MODAL 2: EDIT USER NAME & AVATAR */}
       <Modal visible={editUserInfoModalVisible} transparent animationType="fade" onRequestClose={() => setEditUserInfoModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile Info</Text>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setEditUserInfoModalVisible(false)}>
-                <Cancel01Icon size={18} color="#9CA3AF" />
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Profile Info</Text>
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={() => setEditUserInfoModalVisible(false)}>
+                <Cancel01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputSectionTitle}>Full Name</Text>
+            <Text style={[styles.inputSectionTitle, { color: theme.text }]}>Full Name</Text>
             <TextInput
-              style={styles.fullTextInput}
+              style={[styles.fullTextInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
               value={editName}
               onChangeText={setEditName}
               placeholder="Enter full name"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.textMuted}
             />
 
-            <Text style={styles.inputSectionTitle}>Choose Avatar</Text>
+            {/* Upload from Photo Gallery Action */}
+            <TouchableOpacity
+              style={[styles.galleryPickBtn, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
+              onPress={handlePickImageFromGallery}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.galleryIconBg, { backgroundColor: theme.primaryBg }]}>
+                <Ionicons name="image-outline" size={22} color={Colors.primary} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.galleryPickTitle, { color: theme.text }]}>Choose from Photo Gallery</Text>
+                <Text style={[styles.galleryPickSub, { color: theme.textMuted }]}>Select any custom picture from your device</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
+            </TouchableOpacity>
+
+            <Text style={[styles.inputSectionTitle, { color: theme.text, marginTop: 14 }]}>Or Select Preset Avatar</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+              {/* Selected custom photo preview if not in preset list */}
+              {selectedAvatar && !AVATAR_PRESETS.includes(selectedAvatar) && (
+                <TouchableOpacity
+                  onPress={() => setSelectedAvatar(selectedAvatar)}
+                  style={[styles.presetAvatarBox, styles.presetAvatarBoxActive]}
+                >
+                  <Image source={{ uri: selectedAvatar }} style={styles.presetAvatarImg} />
+                  <View style={styles.presetCheckBadge}>
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+                  </View>
+                </TouchableOpacity>
+              )}
+
               {AVATAR_PRESETS.map((url, idx) => (
                 <TouchableOpacity
                   key={`avatar-${idx}`}
@@ -628,31 +770,33 @@ export default function ProfileScreen() {
 
       {/* MODAL 3: PRIVACY & SECURITY */}
       <Modal visible={privacyModalVisible} transparent animationType="slide" onRequestClose={() => setPrivacyModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="shield-checkmark" size={22} color="#3B82F6" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Privacy & Security</Text>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Privacy & Security</Text>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setPrivacyModalVisible(false)}>
-                <Cancel01Icon size={18} color="#9CA3AF" />
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={() => setPrivacyModalVisible(false)}>
+                <Cancel01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
-              <View style={styles.infoCard}>
+              <View style={[styles.infoCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <Ionicons name="lock-closed" size={20} color="#3B82F6" />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={styles.infoCardTitle}>Encrypted Firestore Sync</Text>
-                  <Text style={styles.infoCardSub}>All profile, meal logs, and workout data are encrypted in transit & at rest using TLS 1.3 & Firebase Security Rules.</Text>
+                  <Text style={[styles.infoCardTitle, { color: theme.text }]}>Encrypted Firestore Sync</Text>
+                  <Text style={[styles.infoCardSub, { color: theme.textMuted }]}>
+                    All profile, meal logs, and workout data are encrypted in transit & at rest using TLS 1.3 & Firebase Security Rules.
+                  </Text>
                 </View>
               </View>
 
-              <View style={styles.settingToggleRow}>
+              <View style={[styles.settingToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleTitle}>App Lock / PIN Protection</Text>
-                  <Text style={styles.toggleSub}>Require biometrics or PIN when opening NutriVision</Text>
+                  <Text style={[styles.toggleTitle, { color: theme.text }]}>App Lock / PIN Protection</Text>
+                  <Text style={[styles.toggleSub, { color: theme.textMuted }]}>Require biometrics or PIN when opening NutriVision</Text>
                 </View>
                 <Switch
                   value={appPinLock}
@@ -660,7 +804,7 @@ export default function ProfileScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setAppPinLock(val);
                   }}
-                  trackColor={{ false: '#1E293B', true: Colors.primary }}
+                  trackColor={{ false: '#CBD5E1', true: Colors.primary }}
                 />
               </View>
 
@@ -675,68 +819,68 @@ export default function ProfileScreen() {
 
       {/* MODAL 4: PUSH NOTIFICATIONS */}
       <Modal visible={notificationsModalVisible} transparent animationType="slide" onRequestClose={() => setNotificationsModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="notifications" size={22} color="#8B5CF6" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Push Notifications</Text>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Push Notifications</Text>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setNotificationsModalVisible(false)}>
-                <Cancel01Icon size={18} color="#9CA3AF" />
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={() => setNotificationsModalVisible(false)}>
+                <Cancel01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
-              {/* Toggle 1: Calorie Target Reminders */}
-              <View style={styles.settingToggleRow}>
+              {/* Toggle 1 */}
+              <View style={[styles.settingToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleTitle}>Daily Calorie Target Reminders</Text>
-                  <Text style={styles.toggleSub}>Alert if daily calorie goal is not reached by evening</Text>
+                  <Text style={[styles.toggleTitle, { color: theme.text }]}>Daily Calorie Target Reminders</Text>
+                  <Text style={[styles.toggleSub, { color: theme.textMuted }]}>Alert if daily calorie goal is not reached by evening</Text>
                 </View>
                 <Switch
                   value={notifSettings.calorieTargetReminders}
                   onValueChange={() => handleToggleNotifSetting('calorieTargetReminders')}
-                  trackColor={{ false: '#1E293B', true: Colors.primary }}
+                  trackColor={{ false: '#CBD5E1', true: Colors.primary }}
                 />
               </View>
 
-              {/* Toggle 2: Excessive Calorie Warnings */}
-              <View style={styles.settingToggleRow}>
+              {/* Toggle 2 */}
+              <View style={[styles.settingToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleTitle}>Excess Calorie Warnings</Text>
-                  <Text style={styles.toggleSub}>Warning alert if consumed calories exceed daily target limit</Text>
+                  <Text style={[styles.toggleTitle, { color: theme.text }]}>Excess Calorie Warnings</Text>
+                  <Text style={[styles.toggleSub, { color: theme.textMuted }]}>Warning alert if consumed calories exceed daily target limit</Text>
                 </View>
                 <Switch
                   value={notifSettings.calorieExcessAlerts}
                   onValueChange={() => handleToggleNotifSetting('calorieExcessAlerts')}
-                  trackColor={{ false: '#1E293B', true: Colors.primary }}
+                  trackColor={{ false: '#CBD5E1', true: Colors.primary }}
                 />
               </View>
 
-              {/* Toggle 3: Hydration Reminders */}
-              <View style={styles.settingToggleRow}>
+              {/* Toggle 3 */}
+              <View style={[styles.settingToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleTitle}>Water Hydration Alerts</Text>
-                  <Text style={styles.toggleSub}>Periodic reminders to drink a glass of water</Text>
+                  <Text style={[styles.toggleTitle, { color: theme.text }]}>Water Hydration Alerts</Text>
+                  <Text style={[styles.toggleSub, { color: theme.textMuted }]}>Periodic reminders to drink a glass of water</Text>
                 </View>
                 <Switch
                   value={notifSettings.hydrationReminders}
                   onValueChange={() => handleToggleNotifSetting('hydrationReminders')}
-                  trackColor={{ false: '#1E293B', true: Colors.primary }}
+                  trackColor={{ false: '#CBD5E1', true: Colors.primary }}
                 />
               </View>
 
-              {/* Toggle 4: Workout Log Reminders */}
-              <View style={styles.settingToggleRow}>
+              {/* Toggle 4 */}
+              <View style={[styles.settingToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.toggleTitle}>Workout Log Reminders</Text>
-                  <Text style={styles.toggleSub}>Remind to record workouts & exercise sessions</Text>
+                  <Text style={[styles.toggleTitle, { color: theme.text }]}>Workout Log Reminders</Text>
+                  <Text style={[styles.toggleSub, { color: theme.textMuted }]}>Remind to record workouts & exercise sessions</Text>
                 </View>
                 <Switch
                   value={notifSettings.workoutLogAlerts}
                   onValueChange={() => handleToggleNotifSetting('workoutLogAlerts')}
-                  trackColor={{ false: '#1E293B', true: Colors.primary }}
+                  trackColor={{ false: '#CBD5E1', true: Colors.primary }}
                 />
               </View>
             </ScrollView>
@@ -746,26 +890,28 @@ export default function ProfileScreen() {
 
       {/* MODAL 5: HELP & SUPPORT */}
       <Modal visible={supportModalVisible} transparent animationType="slide" onRequestClose={() => setSupportModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="help-circle" size={22} color="#F59E0B" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Help & Support</Text>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Help & Support</Text>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setSupportModalVisible(false)}>
-                <Cancel01Icon size={18} color="#9CA3AF" />
+              <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={() => setSupportModalVisible(false)}>
+                <Cancel01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ maxHeight: 460 }} showsVerticalScrollIndicator={false}>
               {/* Direct Support Email Box */}
-              <View style={styles.supportEmailBox}>
+              <View style={[styles.supportEmailBox, { backgroundColor: theme.primaryBg, borderColor: theme.border }]}>
                 <Ionicons name="mail" size={24} color={Colors.primary} />
                 <View style={{ marginLeft: 12, flex: 1 }}>
-                  <Text style={styles.supportEmailTitle}>Direct Support Email</Text>
+                  <Text style={[styles.supportEmailTitle, { color: theme.text }]}>Direct Support Email</Text>
                   <Text style={styles.supportEmailAddr}>shuvotaluckder666@gmail.com</Text>
-                  <Text style={styles.supportEmailSub}>Email us anytime for account help, bug reports, or app inquiries.</Text>
+                  <Text style={[styles.supportEmailSub, { color: theme.textMuted }]}>
+                    Email us anytime for account help, bug reports, or app inquiries.
+                  </Text>
                 </View>
               </View>
 
@@ -775,20 +921,23 @@ export default function ProfileScreen() {
               </TouchableOpacity>
 
               {/* Bug / Issue Form */}
-              <Text style={[styles.inputSectionTitle, { marginTop: 20 }]}>Report an Issue / Bug</Text>
+              <Text style={[styles.inputSectionTitle, { color: theme.text, marginTop: 20 }]}>Report an Issue / Bug</Text>
               <TextInput
-                style={styles.fullTextInput}
+                style={[styles.fullTextInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
                 value={bugSubject}
                 onChangeText={setBugSubject}
                 placeholder="Issue subject (e.g. Calorie tracking bug)"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.textMuted}
               />
               <TextInput
-                style={[styles.fullTextInput, { height: 80, textAlignVertical: 'top' }]}
+                style={[
+                  styles.fullTextInput,
+                  { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border, height: 80, textAlignVertical: 'top' },
+                ]}
                 value={bugMessage}
                 onChangeText={setBugMessage}
                 placeholder="Describe your issue or feedback in detail..."
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.textMuted}
                 multiline
               />
 
@@ -810,7 +959,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0C0F17',
   },
   scrollContainer: {
     paddingHorizontal: 20,
@@ -818,17 +966,14 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   title: {
-    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '800',
     marginBottom: 20,
   },
   profileCard: {
-    backgroundColor: '#121824',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     alignItems: 'center',
     marginBottom: 24,
   },
@@ -860,26 +1005,20 @@ const styles = StyleSheet.create({
     borderColor: '#121824',
   },
   nameText: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '700',
   },
   emailText: {
-    color: '#9CA3AF',
     fontSize: 14,
     marginTop: 4,
   },
   memberBadge: {
-    backgroundColor: Colors.primary10,
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginTop: 12,
-    borderWidth: 1,
-    borderColor: Colors.primary20,
   },
   memberText: {
-    color: Colors.primary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -891,16 +1030,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sectionTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
   },
   goalCard: {
-    backgroundColor: '#121824',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1E293B',
     marginBottom: 24,
   },
   goalRow: {
@@ -916,7 +1052,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.primary10,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -924,12 +1059,10 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   goalLabel: {
-    color: '#6B7280',
     fontSize: 12,
     fontWeight: '500',
   },
   goalValue: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
     marginTop: 2,
@@ -937,12 +1070,10 @@ const styles = StyleSheet.create({
   editBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C253B',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   editBtnText: {
     color: Colors.primary,
@@ -951,14 +1082,11 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1E293B',
     marginVertical: 14,
   },
   menuContainer: {
-    backgroundColor: '#121824',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#1E293B',
     paddingHorizontal: 16,
     marginTop: 12,
     marginBottom: 32,
@@ -982,13 +1110,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   menuText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: '#1E293B',
   },
   signOutButton: {
     flexDirection: 'row',
@@ -1011,16 +1137,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(12, 15, 23, 0.82)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#121824',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 22,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1029,7 +1152,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
   },
@@ -1037,12 +1159,10 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1C253B',
     justifyContent: 'center',
     alignItems: 'center',
   },
   inputSectionTitle: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
     marginTop: 12,
@@ -1055,19 +1175,16 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   selectChip: {
-    backgroundColor: '#1C253B',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   selectChipActive: {
     backgroundColor: Colors.primary10,
     borderColor: Colors.primary,
   },
   selectChipText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1084,29 +1201,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputFieldLabel: {
-    color: '#64748B',
     fontSize: 11,
     marginBottom: 4,
   },
   textInput: {
-    backgroundColor: '#1C253B',
     borderRadius: 12,
-    color: '#FFFFFF',
     paddingHorizontal: 12,
     height: 44,
     borderWidth: 1,
-    borderColor: '#1E293B',
     fontSize: 14,
     fontWeight: '700',
   },
   fullTextInput: {
-    backgroundColor: '#1C253B',
     borderRadius: 14,
-    color: '#FFFFFF',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#1E293B',
     fontSize: 14,
     marginBottom: 12,
   },
@@ -1144,22 +1254,42 @@ const styles = StyleSheet.create({
     top: -2,
     right: -2,
   },
+  galleryPickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  galleryIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  galleryPickTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  galleryPickSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#1C253B',
     borderRadius: 16,
     padding: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   infoCardTitle: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },
   infoCardSub: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
     lineHeight: 17,
@@ -1168,20 +1298,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1C253B',
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   toggleTitle: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
   toggleSub: {
-    color: '#9CA3AF',
     fontSize: 11,
     marginTop: 2,
   },
@@ -1202,15 +1328,12 @@ const styles = StyleSheet.create({
   },
   supportEmailBox: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(81, 130, 216, 0.12)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.primary30,
   },
   supportEmailTitle: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -1221,7 +1344,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   supportEmailSub: {
-    color: '#9CA3AF',
     fontSize: 11,
     marginTop: 4,
     lineHeight: 16,

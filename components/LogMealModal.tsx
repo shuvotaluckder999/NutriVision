@@ -25,6 +25,7 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { MealStorage } from '../utils/mealStorage';
 import { searchFoodDatabase, estimateDynamicFoodCalories } from '../services/geminiService';
+import { useTheme } from '../context/ThemeContext';
 
 interface LogMealModalProps {
   visible: boolean;
@@ -44,16 +45,16 @@ interface FoodItemResult {
 
 export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProps) {
   const { user } = useUser();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
   const [matchedFood, setMatchedFood] = useState<FoodItemResult | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<'bn' | 'en'>('bn'); // 'bn' = Bengali, 'en' = English
+  const [voiceLang, setVoiceLang] = useState<'bn' | 'en'>('bn');
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [addingFood, setAddingFood] = useState(false);
   const [portionMultiplier, setPortionMultiplier] = useState(1.0);
 
-  // Web Speech Recognition Reference
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
@@ -76,7 +77,6 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
       return;
     }
 
-    // Search database or estimate food item
     const results = searchFoodDatabase(trimmed);
     if (results && results.length > 0) {
       setMatchedFood(results[0]);
@@ -100,12 +100,10 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
 
   const handleToggleVoiceDictation = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
     if (isListening) {
       stopVoiceRecognition();
       return;
     }
-
     startVoiceRecognition();
   };
 
@@ -119,7 +117,6 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
         try {
           const recognition = new SpeechRecognition();
           recognitionRef.current = recognition;
-          // Set language to Bengali ('bn-BD') or English ('en-US')
           recognition.lang = voiceLang === 'bn' ? 'bn-BD' : 'en-US';
           recognition.continuous = false;
           recognition.interimResults = true;
@@ -145,12 +142,11 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
           recognition.start();
           return;
         } catch (e) {
-          console.warn('Failed to start Web Speech API, using bilingual speech fallback:', e);
+          console.warn('Failed to start Web Speech API, using speech fallback:', e);
         }
       }
     }
 
-    // Bilingual Interactive Speech Simulation Fallback
     const samplesBn = ['মুরগির মাংস', 'সিদ্ধ ডিম', 'চিকেন বিরিয়ানি', 'সাদা ভাত', 'পাকা আপেল', 'মাছ', 'রুটি'];
     const samplesEn = ['Grilled Chicken Breast', 'Boiled Egg', 'Chicken Biryani', 'Cooked White Rice', 'Fresh Apple', 'Grilled Salmon', 'Whole Wheat Roti'];
     const pool = voiceLang === 'bn' ? samplesBn : samplesEn;
@@ -242,8 +238,8 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
           {/* Header */}
           <View style={styles.modalHeader}>
             <View style={styles.headerTitleRow}>
@@ -251,13 +247,13 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
                 <Restaurant01Icon size={20} color="#EF4444" />
               </View>
               <View style={{ marginLeft: 10 }}>
-                <Text style={styles.modalTitle}>Log Daily Meal</Text>
-                <Text style={styles.modalSub}>Type or speak food name (Bangla / English)</Text>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Log Daily Meal</Text>
+                <Text style={[styles.modalSub, { color: theme.textMuted }]}>Type or speak food name (Bangla / English)</Text>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Cancel01Icon size={18} color="#9CA3AF" />
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]} onPress={onClose}>
+              <Cancel01Icon size={18} color={theme.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -273,7 +269,11 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
               return (
                 <TouchableOpacity
                   key={cat.id}
-                  style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+                  style={[
+                    styles.categoryChip,
+                    { backgroundColor: theme.cardSecondary, borderColor: theme.border },
+                    isSelected && [styles.categoryChipSelected, { backgroundColor: theme.primaryBg, borderColor: Colors.primary }],
+                  ]}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setSelectedCategory(cat.id as any);
@@ -282,9 +282,9 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
                   <MaterialCommunityIcons
                     name={cat.icon as any}
                     size={14}
-                    color={isSelected ? Colors.primary : '#9CA3AF'}
+                    color={isSelected ? Colors.primary : theme.textMuted}
                   />
-                  <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+                  <Text style={[styles.categoryChipText, { color: isSelected ? Colors.primary : theme.textMuted }]}>
                     {cat.label}
                   </Text>
                 </TouchableOpacity>
@@ -293,29 +293,29 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
           </View>
 
           {/* Voice Language Selector Toggle */}
-          <View style={styles.langToggleRow}>
-            <Text style={styles.langToggleLabel}>Voice Language:</Text>
+          <View style={[styles.langToggleRow, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
+            <Text style={[styles.langToggleLabel, { color: theme.textMuted }]}>Voice Language:</Text>
             <View style={styles.langBtnGroup}>
               <TouchableOpacity
-                style={[styles.langBtn, voiceLang === 'bn' && styles.langBtnActive]}
+                style={[styles.langBtn, { backgroundColor: theme.background, borderColor: theme.border }, voiceLang === 'bn' && styles.langBtnActive]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setVoiceLang('bn');
                 }}
               >
-                <Text style={[styles.langBtnText, voiceLang === 'bn' && styles.langBtnTextActive]}>
+                <Text style={[styles.langBtnText, { color: theme.textMuted }, voiceLang === 'bn' && styles.langBtnTextActive]}>
                   🇧🇩 বাংলা (Bengali)
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.langBtn, voiceLang === 'en' && styles.langBtnActive]}
+                style={[styles.langBtn, { backgroundColor: theme.background, borderColor: theme.border }, voiceLang === 'en' && styles.langBtnActive]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setVoiceLang('en');
                 }}
               >
-                <Text style={[styles.langBtnText, voiceLang === 'en' && styles.langBtnTextActive]}>
+                <Text style={[styles.langBtnText, { color: theme.textMuted }, voiceLang === 'en' && styles.langBtnTextActive]}>
                   🇺🇸 English
                 </Text>
               </TouchableOpacity>
@@ -324,22 +324,22 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
 
           {/* Search Input Bar + Voice Microphone Button */}
           <View style={styles.searchSection}>
-            <View style={styles.searchInputContainer}>
-              <Search01Icon size={18} color="#9CA3AF" style={{ marginRight: 8 }} />
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
+              <Search01Icon size={18} color={theme.textMuted} style={{ marginRight: 8 }} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: theme.text }]}
                 value={searchQuery}
                 onChangeText={handleSearchChange}
                 placeholder={
                   voiceLang === 'bn'
-                    ? 'খাবারের নাম বলুন বা লিখুন (যেমন: ভাত, ডিম, মুরগি, আপেল)...'
-                    : 'Type or speak food name (e.g. Chicken, Rice, Apple, Egg)...'
+                    ? 'খাবারের নাম বলুন বা লিখুন (যেমন: ভাত, ডিম, মুরগি)...'
+                    : 'Type or speak food name (e.g. Chicken, Rice, Apple)...'
                 }
-                placeholderTextColor="#64748B"
+                placeholderTextColor={theme.textMuted}
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity onPress={() => handleSearchChange('')}>
-                  <Cancel01Icon size={16} color="#64748B" />
+                  <Cancel01Icon size={16} color={theme.textMuted} />
                 </TouchableOpacity>
               )}
             </View>
@@ -365,11 +365,11 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
               <View style={{ flex: 1 }}>
                 <Text style={styles.listeningText}>
                   {voiceLang === 'bn'
-                    ? 'শুনছি... খাবারের নাম স্পষ্টভাবে বলুন (যেমন: "মুরগির মাংস" বা "ভাত")'
-                    : 'Listening... Speak food name clearly (e.g. "Chicken" or "Rice")'}
+                    ? 'শুনছি... খাবারের নাম স্পষ্টভাবে বলুন'
+                    : 'Listening... Speak food name clearly'}
                 </Text>
                 {voiceTranscript ? (
-                  <Text style={styles.transcriptText}>"{voiceTranscript}"</Text>
+                  <Text style={[styles.transcriptText, { color: theme.text }]}>"{voiceTranscript}"</Text>
                 ) : null}
               </View>
               <TouchableOpacity style={styles.stopVoiceBtn} onPress={stopVoiceRecognition}>
@@ -378,35 +378,34 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
             </View>
           )}
 
-          {/* Body Content: Active Food Result Card (No Long Unwanted List) */}
+          {/* Body Content */}
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 10 }} showsVerticalScrollIndicator={false}>
             {!searchQuery.trim() ? (
-              <View style={styles.emptyPromptCard}>
+              <View style={[styles.emptyPromptCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <View style={styles.promptIconBg}>
                   <Restaurant01Icon size={32} color={Colors.primary} />
                 </View>
-                <Text style={styles.emptyPromptTitle}>Search or Speak Food Name</Text>
-                <Text style={styles.emptyPromptSub}>
+                <Text style={[styles.emptyPromptTitle, { color: theme.text }]}>Search or Speak Food Name</Text>
+                <Text style={[styles.emptyPromptSub, { color: theme.textMuted }]}>
                   {voiceLang === 'bn'
                     ? 'উপরে যেকোনো খাবারের নাম লিখুন অথবা মাইক বাটনে ক্লিক করে মুখে বলুন। AI তৎক্ষণাৎ ক্যালরি ও ম্যাক্রো হিসাব করে দেবে।'
                     : 'Type any food or dish above or press the mic button to speak. AI will calculate calories & macros instantly.'}
                 </Text>
               </View>
             ) : matchedFood ? (
-              <View style={styles.foodResultCard}>
+              <View style={[styles.foodResultCard, { backgroundColor: theme.cardSecondary, borderColor: Colors.primary }]}>
                 {/* Food Header */}
                 <View style={styles.foodResultTopRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.foodResultTitle}>{matchedFood.name}</Text>
+                    <Text style={[styles.foodResultTitle, { color: theme.text }]}>{matchedFood.name}</Text>
                     {matchedFood.bengaliName ? (
                       <Text style={styles.foodResultBengaliTitle}>{matchedFood.bengaliName}</Text>
                     ) : null}
-                    <Text style={styles.foodResultPortion}>
+                    <Text style={[styles.foodResultPortion, { color: theme.textMuted }]}>
                       Portion: {portionMultiplier !== 1 ? `${portionMultiplier}x ` : ''}{matchedFood.defaultPortion}
                     </Text>
                   </View>
 
-                  {/* Calculated Calorie Badge */}
                   <View style={styles.calorieBadge}>
                     <Ionicons name="flame" size={16} color="#EF4444" />
                     <Text style={styles.calorieBadgeText}>
@@ -421,40 +420,40 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
                     <Text style={[styles.macroBoxVal, { color: '#EF4444' }]}>
                       {parseFloat((matchedFood.protein * portionMultiplier).toFixed(1))}g
                     </Text>
-                    <Text style={styles.macroBoxLabel}>Protein</Text>
+                    <Text style={[styles.macroBoxLabel, { color: theme.textMuted }]}>Protein</Text>
                   </View>
 
                   <View style={[styles.macroBox, { backgroundColor: 'rgba(245, 158, 11, 0.12)', borderColor: 'rgba(245, 158, 11, 0.3)' }]}>
                     <Text style={[styles.macroBoxVal, { color: '#F59E0B' }]}>
                       {parseFloat((matchedFood.carbs * portionMultiplier).toFixed(1))}g
                     </Text>
-                    <Text style={styles.macroBoxLabel}>Carbs</Text>
+                    <Text style={[styles.macroBoxLabel, { color: theme.textMuted }]}>Carbs</Text>
                   </View>
 
                   <View style={[styles.macroBox, { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.3)' }]}>
                     <Text style={[styles.macroBoxVal, { color: '#3B82F6' }]}>
                       {parseFloat((matchedFood.fats * portionMultiplier).toFixed(1))}g
                     </Text>
-                    <Text style={styles.macroBoxLabel}>Fats</Text>
+                    <Text style={[styles.macroBoxLabel, { color: theme.textMuted }]}>Fats</Text>
                   </View>
                 </View>
 
                 {/* Portion Adjuster Controls */}
-                <View style={styles.portionAdjusterRow}>
-                  <Text style={styles.portionAdjusterLabel}>Adjust Quantity / Serving:</Text>
+                <View style={[styles.portionAdjusterRow, { backgroundColor: theme.background }]}>
+                  <Text style={[styles.portionAdjusterLabel, { color: theme.textMuted }]}>Adjust Quantity / Serving:</Text>
                   <View style={styles.portionControlGroup}>
                     <TouchableOpacity
-                      style={styles.portionBtn}
+                      style={[styles.portionBtn, { backgroundColor: theme.cardSecondary }]}
                       onPress={() => handleAdjustMultiplier(-0.5)}
                     >
-                      <Text style={styles.portionBtnText}>-</Text>
+                      <Text style={[styles.portionBtnText, { color: theme.text }]}>-</Text>
                     </TouchableOpacity>
-                    <Text style={styles.portionMultText}>{portionMultiplier}x</Text>
+                    <Text style={[styles.portionMultText, { color: theme.text }]}>{portionMultiplier}x</Text>
                     <TouchableOpacity
-                      style={styles.portionBtn}
+                      style={[styles.portionBtn, { backgroundColor: theme.cardSecondary }]}
                       onPress={() => handleAdjustMultiplier(0.5)}
                     >
-                      <Text style={styles.portionBtnText}>+</Text>
+                      <Text style={[styles.portionBtnText, { color: theme.text }]}>+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -479,10 +478,10 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={styles.emptyPromptCard}>
+              <View style={[styles.emptyPromptCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}>
                 <SparklesIcon size={32} color={Colors.primary} />
-                <Text style={styles.emptyPromptTitle}>No Matching Food</Text>
-                <Text style={styles.emptyPromptSub}>
+                <Text style={[styles.emptyPromptTitle, { color: theme.text }]}>No Matching Food</Text>
+                <Text style={[styles.emptyPromptSub, { color: theme.textMuted }]}>
                   Try typing or speaking the name of the food clearly (e.g. "Chicken", "Rice", "Apple", "ডিম", "ভাত").
                 </Text>
               </View>
@@ -497,17 +496,14 @@ export function LogMealModal({ visible, onClose, onMealAdded }: LogMealModalProp
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(12, 15, 23, 0.82)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#121824',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     height: '84%',
     padding: 20,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -528,19 +524,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
   },
   modalSub: {
-    color: '#9CA3AF',
     fontSize: 12,
   },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1C253B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -552,40 +545,27 @@ const styles = StyleSheet.create({
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C253B',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
     gap: 4,
   },
-  categoryChipSelected: {
-    backgroundColor: 'rgba(81, 130, 216, 0.15)',
-    borderColor: Colors.primary,
-  },
+  categoryChipSelected: {},
   categoryChipText: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
-  },
-  categoryChipTextSelected: {
-    color: Colors.primary,
-    fontWeight: '700',
   },
   langToggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    backgroundColor: '#1C253B',
     borderRadius: 12,
     padding: 8,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   langToggleLabel: {
-    color: '#9CA3AF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -597,16 +577,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#121824',
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   langBtnActive: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
   },
   langBtnText: {
-    color: '#9CA3AF',
     fontSize: 11,
     fontWeight: '600',
   },
@@ -624,16 +601,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C253B',
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 48,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   searchInput: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 13,
   },
   voiceBtn: {
@@ -675,7 +649,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   transcriptText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
     marginTop: 2,
@@ -693,12 +666,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   emptyPromptCard: {
-    backgroundColor: '#1C253B',
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#1E293B',
     marginTop: 10,
   },
   promptIconBg: {
@@ -711,23 +682,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyPromptTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
   emptyPromptSub: {
-    color: '#9CA3AF',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 6,
     lineHeight: 18,
   },
   foodResultCard: {
-    backgroundColor: '#1C253B',
     borderRadius: 20,
     padding: 18,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
   },
   foodResultTopRow: {
     flexDirection: 'row',
@@ -736,7 +703,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   foodResultTitle: {
-    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '800',
   },
@@ -747,7 +713,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   foodResultPortion: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 4,
   },
@@ -785,7 +750,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   macroBoxLabel: {
-    color: '#9CA3AF',
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -795,59 +759,49 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    backgroundColor: '#121824',
     padding: 10,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#1E293B',
   },
   portionAdjusterLabel: {
-    color: '#CBD5E1',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   portionControlGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C253B',
-    borderRadius: 8,
-    padding: 2,
-    borderWidth: 1,
-    borderColor: '#1E293B',
+    gap: 12,
   },
   portionBtn: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   portionBtnText: {
-    color: Colors.primary,
     fontSize: 18,
     fontWeight: '800',
   },
   portionMultText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    paddingHorizontal: 8,
   },
   addFoodBtn: {
-    backgroundColor: Colors.primary,
+    height: 48,
     borderRadius: 14,
-    paddingVertical: 13,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
     elevation: 4,
   },
   addFoodBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

@@ -1,6 +1,3 @@
-import { useUser } from '@clerk/expo';
-import * as Haptics from 'expo-haptics';
-import { Notification01Icon, UserIcon } from 'hugeicons-react-native';
 import React from 'react';
 import {
   Alert,
@@ -10,14 +7,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useUser } from '@clerk/expo';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { Notification01Icon, UserIcon } from 'hugeicons-react-native';
 import { Colors } from '../constants/Colors';
+import { useTheme } from '../context/ThemeContext';
 
 interface HomeHeaderProps {
   onNotificationPress?: () => void;
+  unreadCount?: number;
 }
 
-export const HomeHeader: React.FC<HomeHeaderProps> = ({ onNotificationPress }) => {
+export const HomeHeader: React.FC<HomeHeaderProps> = ({ onNotificationPress, unreadCount = 0 }) => {
   const { user } = useUser();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const handlePressNotification = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -48,34 +52,63 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({ onNotificationPress }) =
           {avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.card, borderColor: Colors.primary20 }]}>
               <UserIcon size={22} color={Colors.primary} />
             </View>
           )}
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.welcomeText}>Welcome back </Text>
-          <Text style={styles.userNameText} numberOfLines={1}>
+          <Text style={[styles.welcomeText, { color: theme.textMuted }]}>Welcome back 👋</Text>
+          <Text style={[styles.userNameText, { color: theme.text }]} numberOfLines={1}>
             {displayName}
           </Text>
         </View>
       </View>
 
-      {/* Right Side: Notification Bell + Compact Date & Day */}
+      {/* Right Side: Theme Toggle + Notification Bell + Compact Date */}
       <View style={styles.rightSection}>
-        <TouchableOpacity
-          style={styles.notificationButton}
-          onPress={handlePressNotification}
-          activeOpacity={0.75}
-        >
-          <Notification01Icon size={22} color="#FFFFFF" />
-          <View style={styles.unreadBadge} />
-        </TouchableOpacity>
+        <View style={styles.topIconRow}>
+          {/* Quick Theme Switcher Button */}
+          <TouchableOpacity
+            style={[
+              styles.iconButton,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              toggleTheme();
+            }}
+            activeOpacity={0.75}
+          >
+            <Ionicons
+              name={isDark ? 'sunny' : 'moon'}
+              size={18}
+              color={isDark ? '#F59E0B' : '#8B5CF6'}
+            />
+          </TouchableOpacity>
 
-        <View style={styles.dateBox}>
-          <Text style={styles.dateText}>{dateString}</Text>
-          <Text style={styles.dayText}>{dayOfWeek}</Text>
+          {/* Notification Button */}
+          <TouchableOpacity
+            style={[
+              styles.iconButton,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+            onPress={handlePressNotification}
+            activeOpacity={0.75}
+          >
+            <Notification01Icon size={19} color={theme.text} />
+            {unreadCount > 0 && (
+              <View style={[styles.unreadBadge, { borderColor: theme.card }]}>
+                <Text style={styles.unreadCountText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.dateBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.dateText, { color: theme.text }]}>{dateString}</Text>
+          <Text style={[styles.dayText, { color: Colors.primary }]}>{dayOfWeek}</Text>
         </View>
       </View>
     </View>
@@ -113,9 +146,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#121824',
     borderWidth: 2,
-    borderColor: Colors.primary20,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -124,73 +155,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   welcomeText: {
-    color: '#9CA3AF',
     fontSize: 13,
     fontWeight: '500',
   },
   userNameText: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '800',
     marginTop: 2,
   },
   rightSection: {
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    gap: 8,
   },
-  notificationButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#121824',
+  topIconRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-    marginBottom: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   unreadBadge: {
     position: 'absolute',
-    top: 10,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
     borderWidth: 1.5,
-    borderColor: '#121824',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+  },
+  unreadCountText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    textAlign: 'center',
   },
   dateBox: {
-    backgroundColor: '#121824',
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 125,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   dateText: {
-    color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
     textAlign: 'center',
   },
   dayText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-    marginTop: 3,
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
     textAlign: 'center',
   },
 });

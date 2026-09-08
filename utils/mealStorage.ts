@@ -34,8 +34,20 @@ export interface AccumulatedConsumed {
 
 const MEALS_KEY_PREFIX = '@nutrivision_meals_';
 const ACCUMULATED_KEY_PREFIX = '@nutrivision_accumulated_consumed_';
+const LAST_MEAL_DATE_KEY_PREFIX = '@nutrivision_last_meal_date_';
 
 export const MealStorage = {
+  /**
+   * Helper to get today's YYYY-MM-DD date string
+   */
+  getTodayDateStr(): string {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  },
+
   /**
    * Storage key for local AsyncStorage cache per user
    */
@@ -44,12 +56,42 @@ export const MealStorage = {
   },
 
   /**
+   * Get accumulated consumed key for user (date-specific)
+   */
+  getAccumulatedKey(userId: string, dateStr?: string): string {
+    const date = dateStr || this.getTodayDateStr();
+    return `${ACCUMULATED_KEY_PREFIX}${userId}_${date}`;
+  },
+
+  /**
+   * Check if today is a new day and reset daily progress if date changed
+   */
+  async checkAndResetDaily(userId: string): Promise<boolean> {
+    if (!userId) return false;
+    const today = this.getTodayDateStr();
+    const lastDateKey = `${LAST_MEAL_DATE_KEY_PREFIX}${userId}`;
+    try {
+      const lastDate = await AsyncStorage.getItem(lastDateKey);
+      if (lastDate !== today) {
+        // New day detected! Update last date
+        await AsyncStorage.setItem(lastDateKey, today);
+        return true;
+      }
+    } catch (err) {
+      console.warn('Error checking last meal date:', err);
+    }
+    return false;
+  },
+
+  /**
    * Retrieve meals logged by user today.
    * Checks AsyncStorage cache first for speed, then syncs with Firebase Firestore.
+   * Filters by today's date so previous days' meals don't bleed into today's list.
    */
   async getUserMeals(userId: string): Promise<LoggedMeal[]> {
     if (!userId) return [];
 
+    const todayStr = this.getTodayDateStr();
     let cachedMeals: LoggedMeal[] = [];
 
     // 1. Check local AsyncStorage cache
@@ -62,6 +104,12 @@ export const MealStorage = {
       console.warn('Error reading local meals cache:', err);
     }
 
+    // Filter today's meals from cache
+    const todayCachedMeals = cachedMeals.filter((meal) => {
+      if (!meal.createdAt) return true;
+      return meal.createdAt.substring(0, 10) === todayStr;
+    });
+
     // 2. Fetch from Firestore (users/{userId}/meals)
     try {
       const mealsRef = collection(db, 'users', userId, 'meals');
@@ -71,19 +119,23 @@ export const MealStorage = {
       const firestoreMeals: LoggedMeal[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        firestoreMeals.push({
-          id: docSnap.id,
-          foodName: data.foodName || 'Food Item',
-          portion: data.portion || '1 serving',
-          weightGrams: Number(data.weightGrams) || 100,
-          calories: Number(data.calories) || 0,
-          protein: Number(data.protein) || 0,
-          carbs: Number(data.carbs) || 0,
-          fats: Number(data.fats) || 0,
-          mealType: data.mealType || 'snack',
-          timestamp: data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          createdAt: data.createdAt || new Date().toISOString(),
-        });
+        const createdAt = data.createdAt || new Date().toISOString();
+        // Only include today's meals for the daily tracker list
+        if (createdAt.substring(0, 10) === todayStr) {
+          firestoreMeals.push({
+            id: docSnap.id,
+            foodName: data.foodName || 'Food Item',
+            portion: data.portion || '1 serving',
+            weightGrams: Number(data.weightGrams) || 100,
+            calories: Number(data.calories) || 0,
+            protein: Number(data.protein) || 0,
+            carbs: Number(data.carbs) || 0,
+            fats: Number(data.fats) || 0,
+            mealType: data.mealType || 'snack',
+            timestamp: data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            createdAt,
+          });
+        }
       });
 
       if (firestoreMeals.length > 0 || querySnapshot.empty) {
@@ -94,7 +146,7 @@ export const MealStorage = {
       console.warn('Error fetching meals from Firestore (using local cache):', fsErr);
     }
 
-    return cachedMeals;
+    return todayCachedMeals;
   },
 
   /**
@@ -143,7 +195,7 @@ export const MealStorage = {
       const updatedList = [createdMeal, ...currentMeals.filter((m) => m.id !== generatedId)];
       await AsyncStorage.setItem(this.getKey(userId), JSON.stringify(updatedList));
 
-      // Auto-accumulate consumed calories & macros (never reduced on meal deletion)
+      // Auto-accumulate consumed calories & macros for today
       await this.addAccumulatedConsumed(userId, {
         calories: createdMeal.calories,
         protein: createdMeal.protein,
@@ -158,19 +210,14 @@ export const MealStorage = {
   },
 
   /**
-   * Get accumulated consumed key for user
-   */
-  getAccumulatedKey(userId: string): string {
-    return `${ACCUMULATED_KEY_PREFIX}${userId}`;
-  },
-
-  /**
    * Get accumulated consumed calories & macros for today
    */
-  async getAccumulatedConsumed(userId: string): Promise<AccumulatedConsumed> {
+  async getAccumulatedConsumed(userId: string, dateStr?: string): Promise<AccumulatedConsumed> {
     if (!userId) return { calories: 0, protein: 0, carbs: 0, fats: 0 };
+    await this.checkAndResetDaily(userId);
     try {
-      const data = await AsyncStorage.getItem(this.getAccumulatedKey(userId));
+      const key = this.getAccumulatedKey(userId, dateStr);
+      const data = await AsyncStorage.getItem(key);
       if (data) {
         return JSON.parse(data);
       }
@@ -181,13 +228,14 @@ export const MealStorage = {
   },
 
   /**
-   * Add calories & macros to accumulated total
+   * Add calories & macros to accumulated total for today
    */
   async addAccumulatedConsumed(
     userId: string,
-    added: { calories: number; protein: number; carbs: number; fats: number }
+    added: { calories: number; protein: number; carbs: number; fats: number },
+    dateStr?: string
   ): Promise<AccumulatedConsumed> {
-    const current = await this.getAccumulatedConsumed(userId);
+    const current = await this.getAccumulatedConsumed(userId, dateStr);
     const updated: AccumulatedConsumed = {
       calories: Math.round(current.calories + (added.calories || 0)),
       protein: parseFloat((current.protein + (added.protein || 0)).toFixed(1)),
@@ -195,7 +243,8 @@ export const MealStorage = {
       fats: parseFloat((current.fats + (added.fats || 0)).toFixed(1)),
     };
     try {
-      await AsyncStorage.setItem(this.getAccumulatedKey(userId), JSON.stringify(updated));
+      const key = this.getAccumulatedKey(userId, dateStr);
+      await AsyncStorage.setItem(key, JSON.stringify(updated));
     } catch (err) {
       console.error('Error saving accumulated consumed data:', err);
     }
@@ -204,8 +253,6 @@ export const MealStorage = {
 
   /**
    * Delete a meal by ID from Firestore and local cache.
-   * NOTE: Per system design, deleting a meal item removes it from the UI list,
-   * but DOES NOT reduce/decrement the Calories & Macros Tracker values.
    */
   async deleteMeal(userId: string, mealId: string): Promise<boolean> {
     if (!userId || !mealId) return false;
@@ -219,7 +266,7 @@ export const MealStorage = {
       console.warn('Error deleting meal from Firestore:', fsErr);
     }
 
-    // 2. Remove from local list cache (consumed calories & macros tracker remain unchanged)
+    // 2. Remove from local list cache
     try {
       const localData = await AsyncStorage.getItem(this.getKey(userId));
       if (localData) {
@@ -235,7 +282,7 @@ export const MealStorage = {
   },
 
   /**
-   * Clear today's meals cache and reset accumulated tracking
+   * Clear today's meals cache and reset accumulated tracking to 0
    */
   async clearTodayMeals(userId: string): Promise<boolean> {
     if (!userId) return false;
@@ -249,3 +296,4 @@ export const MealStorage = {
     }
   },
 };
+

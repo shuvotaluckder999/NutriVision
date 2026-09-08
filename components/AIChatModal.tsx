@@ -20,6 +20,7 @@ import {
   SparklesIcon,
 } from 'hugeicons-react-native';
 import { Colors } from '../constants/Colors';
+import { useTheme } from '../context/ThemeContext';
 import { askAIChatbot, ChatMessage } from '../services/geminiService';
 
 interface AIChatModalProps {
@@ -28,6 +29,8 @@ interface AIChatModalProps {
 }
 
 export function AIChatModal({ visible, onClose }: AIChatModalProps) {
+  const { theme } = useTheme();
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-1',
@@ -123,48 +126,48 @@ export function AIChatModal({ visible, onClose }: AIChatModalProps) {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}
-        style={styles.modalOverlay}
+        style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}
       >
-        <View style={styles.chatContainer}>
+        <View style={[styles.chatContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
           {/* Header Bar */}
-          <View style={styles.header}>
+          <View style={[styles.header, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.headerLeft}>
-              <View style={styles.aiAvatarBg}>
+              <View style={[styles.aiAvatarBg, { backgroundColor: theme.primaryBg }]}>
                 <SparklesIcon size={20} color={Colors.primary} />
               </View>
               <View style={{ marginLeft: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.headerTitle}>NutriVision AI</Text>
+                  <Text style={[styles.headerTitle, { color: theme.text }]}>NutriVision AI</Text>
                   <View style={styles.onlineBadge}>
                     <View style={styles.onlineDot} />
                     <Text style={styles.onlineText}>GPT Online</Text>
                   </View>
                 </View>
-                <Text style={styles.headerSub}>Health tips & calorie calculator</Text>
+                <Text style={[styles.headerSub, { color: theme.textMuted }]}>Health tips & calorie calculator</Text>
               </View>
             </View>
 
             <View style={styles.headerRight}>
-              <TouchableOpacity style={styles.iconBtn} onPress={handleClearChat} activeOpacity={0.7}>
-                <Delete01Icon size={18} color="#9CA3AF" />
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.cardSecondary }]} onPress={handleClearChat} activeOpacity={0.7}>
+                <Delete01Icon size={18} color={theme.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, { marginLeft: 8 }]} onPress={onClose} activeOpacity={0.7}>
-                <Cancel01Icon size={20} color="#FFFFFF" />
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: theme.cardSecondary, marginLeft: 8 }]} onPress={onClose} activeOpacity={0.7}>
+                <Cancel01Icon size={20} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Quick Prompts Carousel */}
-          <View style={styles.quickPromptsContainer}>
+          <View style={[styles.quickPromptsContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPromptsScroll}>
               {quickPrompts.map((prompt, idx) => (
                 <TouchableOpacity
                   key={idx}
-                  style={styles.promptChip}
+                  style={[styles.promptChip, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
                   onPress={() => handleSend(prompt.replace(/^[^\s]+\s*/, ''))}
                   activeOpacity={0.75}
                 >
-                  <Text style={styles.promptChipText}>{prompt}</Text>
+                  <Text style={[styles.promptChipText, { color: theme.text }]}>{prompt}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -173,63 +176,67 @@ export function AIChatModal({ visible, onClose }: AIChatModalProps) {
           {/* Messages ScrollView */}
           <ScrollView
             ref={scrollViewRef}
-            style={styles.messagesScroll}
+            style={[styles.messagesScroll, { backgroundColor: theme.background }]}
             contentContainerStyle={styles.messagesContent}
             showsVerticalScrollIndicator={false}
           >
             {messages.map((msg) => {
               const isUser = msg.sender === 'user';
               return (
-                <View
-                  key={msg.id}
-                  style={[styles.messageRow, isUser ? styles.messageRowUser : styles.messageRowAi]}
-                >
+                <View key={msg.id} style={[styles.messageRow, isUser ? styles.messageRowUser : styles.messageRowAi]}>
                   {!isUser && (
-                    <View style={styles.messageAvatar}>
+                    <View style={[styles.messageAvatar, { backgroundColor: theme.primaryBg }]}>
                       <SparklesIcon size={14} color={Colors.primary} />
                     </View>
                   )}
 
-                  <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAi]}>
-                    <Text style={[styles.messageText, isUser ? styles.messageTextUser : styles.messageTextAi]}>
+                  <View
+                    style={[
+                      styles.bubble,
+                      isUser
+                        ? styles.bubbleUser
+                        : [styles.bubbleAi, { backgroundColor: theme.cardSecondary, borderColor: theme.border }],
+                    ]}
+                  >
+                    <Text style={[styles.messageText, isUser ? styles.messageTextUser : [styles.messageTextAi, { color: theme.text }]]}>
                       {msg.text}
                     </Text>
 
                     {/* Food Calorie & Macro Card inside AI message */}
                     {msg.foodMacroCard && (
-                      <View style={styles.macroCardContainer}>
+                      <View style={[styles.macroCardContainer, { backgroundColor: theme.card, borderColor: Colors.primary }]}>
                         <View style={styles.macroCardHeader}>
                           <MaterialCommunityIcons name="silverware-fork-knife" size={16} color={Colors.primary} />
-                          <Text style={styles.macroCardTitle}>{msg.foodMacroCard.foodName}</Text>
-                          <Text style={styles.macroCardPortion}>({msg.foodMacroCard.portion})</Text>
+                          <Text style={[styles.macroCardTitle, { color: theme.text }]}>{msg.foodMacroCard.foodName}</Text>
+                          <Text style={[styles.macroCardPortion, { color: theme.textMuted }]}>({msg.foodMacroCard.portion})</Text>
                         </View>
 
                         <View style={styles.macroCalorieHighlight}>
                           <Ionicons name="flame" size={20} color="#EF4444" />
-                          <Text style={styles.macroCalorieValue}>{msg.foodMacroCard.calories}</Text>
+                          <Text style={[styles.macroCalorieValue, { color: theme.text }]}>{msg.foodMacroCard.calories}</Text>
                           <Text style={styles.macroCalorieUnit}>kcal total</Text>
                         </View>
 
-                        <View style={styles.macroMetricsGrid}>
+                        <View style={[styles.macroMetricsGrid, { backgroundColor: theme.background, borderColor: theme.border }]}>
                           <View style={styles.macroMetricItem}>
-                            <Text style={styles.macroMetricLabel}>Protein</Text>
+                            <Text style={[styles.macroMetricLabel, { color: theme.textMuted }]}>Protein</Text>
                             <Text style={[styles.macroMetricValue, { color: '#EF4444' }]}>{msg.foodMacroCard.protein}g</Text>
                           </View>
-                          <View style={styles.macroMetricDivider} />
+                          <View style={[styles.macroMetricDivider, { backgroundColor: theme.border }]} />
                           <View style={styles.macroMetricItem}>
-                            <Text style={styles.macroMetricLabel}>Carbs</Text>
+                            <Text style={[styles.macroMetricLabel, { color: theme.textMuted }]}>Carbs</Text>
                             <Text style={[styles.macroMetricValue, { color: '#F59E0B' }]}>{msg.foodMacroCard.carbs}g</Text>
                           </View>
-                          <View style={styles.macroMetricDivider} />
+                          <View style={[styles.macroMetricDivider, { backgroundColor: theme.border }]} />
                           <View style={styles.macroMetricItem}>
-                            <Text style={styles.macroMetricLabel}>Fats</Text>
+                            <Text style={[styles.macroMetricLabel, { color: theme.textMuted }]}>Fats</Text>
                             <Text style={[styles.macroMetricValue, { color: '#3B82F6' }]}>{msg.foodMacroCard.fats}g</Text>
                           </View>
                         </View>
                       </View>
                     )}
 
-                    <Text style={styles.timestamp}>{msg.timestamp}</Text>
+                    <Text style={[styles.timestamp, isUser && { color: 'rgba(255,255,255,0.7)' }]}>{msg.timestamp}</Text>
                   </View>
                 </View>
               );
@@ -237,23 +244,23 @@ export function AIChatModal({ visible, onClose }: AIChatModalProps) {
 
             {loading && (
               <View style={[styles.messageRow, styles.messageRowAi]}>
-                <View style={styles.messageAvatar}>
+                <View style={[styles.messageAvatar, { backgroundColor: theme.primaryBg }]}>
                   <SparklesIcon size={14} color={Colors.primary} />
                 </View>
-                <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
+                <View style={[styles.bubble, styles.bubbleAi, { backgroundColor: theme.cardSecondary, borderColor: theme.border }, styles.loadingBubble]}>
                   <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={styles.loadingText}>Analyzing nutrition & calories...</Text>
+                  <Text style={[styles.loadingText, { color: theme.textMuted }]}>Analyzing nutrition & calories...</Text>
                 </View>
               </View>
             )}
           </ScrollView>
 
           {/* Input Bar */}
-          <View style={styles.inputBar}>
+          <View style={[styles.inputBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.border }]}
               placeholder="Ask AI about food, calories, or fitness..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.textMuted}
               value={inputText}
               onChangeText={setInputText}
               returnKeyType="send"
@@ -262,19 +269,12 @@ export function AIChatModal({ visible, onClose }: AIChatModalProps) {
             />
 
             <TouchableOpacity
-              style={[
-                styles.sendBtn,
-                (!inputText.trim() || loading) && styles.sendBtnDisabled,
-              ]}
+              style={[styles.sendBtn, (!inputText.trim() || loading) && styles.sendBtnDisabled]}
               onPress={() => handleSend()}
               disabled={!inputText.trim() || loading}
               activeOpacity={0.8}
             >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <SentIcon size={18} color="#FFFFFF" />
-              )}
+              {loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <SentIcon size={18} color="#FFFFFF" />}
             </TouchableOpacity>
           </View>
         </View>
@@ -286,16 +286,13 @@ export function AIChatModal({ visible, onClose }: AIChatModalProps) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(12, 15, 23, 0.85)',
     justifyContent: 'flex-end',
   },
   chatContainer: {
     height: '92%',
-    backgroundColor: '#0C0F17',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -307,8 +304,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-    backgroundColor: '#121824',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -318,20 +313,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(81, 130, 216, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(81, 130, 216, 0.3)',
+    borderColor: Colors.primary20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
     marginRight: 8,
   },
   headerSub: {
-    color: '#9CA3AF',
     fontSize: 11,
     marginTop: 2,
   },
@@ -365,38 +357,31 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   quickPromptsContainer: {
-    backgroundColor: '#121824',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   quickPromptsScroll: {
     paddingHorizontal: 16,
     gap: 8,
   },
   promptChip: {
-    backgroundColor: '#1C253B',
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#2D3748',
     ...(Platform.OS === 'web' ? { cursor: 'pointer' } : {}),
   },
   promptChipText: {
-    color: '#E2E8F0',
     fontSize: 12,
     fontWeight: '600',
   },
   messagesScroll: {
     flex: 1,
-    backgroundColor: '#0C0F17',
   },
   messagesContent: {
     padding: 16,
@@ -417,7 +402,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(81, 130, 216, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -434,10 +418,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleAi: {
-    backgroundColor: '#121824',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   messageText: {
     fontSize: 14,
@@ -448,11 +430,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   messageTextAi: {
-    color: '#F1F5F9',
+    fontWeight: '400',
   },
   timestamp: {
     fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(156, 163, 175, 0.8)',
     alignSelf: 'flex-end',
     marginTop: 6,
   },
@@ -463,16 +445,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   loadingText: {
-    color: '#9CA3AF',
     fontSize: 13,
   },
   macroCardContainer: {
     marginTop: 12,
-    backgroundColor: '#1C253B',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
   },
   macroCardHeader: {
     flexDirection: 'row',
@@ -480,13 +459,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   macroCardTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
     marginLeft: 8,
   },
   macroCardPortion: {
-    color: '#9CA3AF',
     fontSize: 12,
     marginLeft: 6,
   },
@@ -502,7 +479,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239, 68, 68, 0.25)',
   },
   macroCalorieValue: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
     marginLeft: 6,
@@ -517,17 +493,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#0C0F17',
     borderRadius: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   macroMetricItem: {
     alignItems: 'center',
   },
   macroMetricLabel: {
-    color: '#9CA3AF',
     fontSize: 11,
   },
   macroMetricValue: {
@@ -538,28 +511,22 @@ const styles = StyleSheet.create({
   macroMetricDivider: {
     width: 1,
     height: 20,
-    backgroundColor: '#1E293B',
   },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#121824',
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
     gap: 10,
   },
   textInput: {
     flex: 1,
     height: 48,
-    backgroundColor: '#0C0F17',
     borderRadius: 24,
     paddingHorizontal: 18,
-    color: '#FFFFFF',
     fontSize: 14,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
   },
   sendBtn: {
     width: 48,

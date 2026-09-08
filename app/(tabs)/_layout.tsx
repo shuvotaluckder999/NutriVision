@@ -25,11 +25,17 @@ import {
 import { Colors } from '../../constants/Colors';
 import { AIChatModal } from '../../components/AIChatModal';
 import { LogMealModal } from '../../components/LogMealModal';
+import { LogWorkoutModal } from '../../components/LogWorkoutModal';
+import { LogWaterModal } from '../../components/LogWaterModal';
+import { useTheme } from '../../context/ThemeContext';
 
 function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
+  const { theme } = useTheme();
   const [quickActionVisible, setQuickActionVisible] = useState(false);
   const [aiChatVisible, setAiChatVisible] = useState(false);
   const [logMealVisible, setLogMealVisible] = useState(false);
+  const [logWorkoutVisible, setLogWorkoutVisible] = useState(false);
+  const [logWaterVisible, setLogWaterVisible] = useState(false);
 
   const tabs = [
     {
@@ -54,17 +60,9 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
     setQuickActionVisible(true);
   };
 
-  const handleActionSelect = (actionName: string) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setQuickActionVisible(false);
-    setTimeout(() => {
-      Alert.alert(actionName, `${actionName} feature quick action logged successfully!`);
-    }, 200);
-  };
-
   return (
     <>
-      <View style={styles.floatingContainer}>
+      <View style={[styles.floatingContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
         {/* Tab Items Row */}
         <View style={styles.tabItemsRow}>
           {tabs.map((tab) => {
@@ -87,7 +85,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
             };
 
             const activeColor = Colors.primary;
-            const inactiveColor = '#64748B';
+            const inactiveColor = theme.textMuted;
 
             return (
               <TouchableOpacity
@@ -95,7 +93,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 onPress={onPress}
                 style={[
                   styles.tabButton,
-                  isFocused && styles.tabButtonActive,
+                  isFocused && { backgroundColor: theme.primaryBg },
                 ]}
                 activeOpacity={0.7}
               >
@@ -103,7 +101,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 <Text
                   style={[
                     styles.tabLabel,
-                    isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+                    isFocused ? styles.tabLabelActive : { color: inactiveColor },
                   ]}
                 >
                   {tab.label}
@@ -114,7 +112,7 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         </View>
 
         {/* Vertical Divider */}
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         {/* Floating Rounded Plus Button on the Right */}
         <TouchableOpacity
@@ -134,24 +132,24 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
         onRequestClose={() => setQuickActionVisible(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, { backgroundColor: theme.modalOverlay }]}
           activeOpacity={1}
           onPress={() => setQuickActionVisible(false)}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Quick Action</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Quick Action</Text>
               <TouchableOpacity
                 onPress={() => setQuickActionVisible(false)}
-                style={styles.closeBtn}
+                style={[styles.closeBtn, { backgroundColor: theme.cardSecondary }]}
               >
-                <Cancel01Icon size={20} color="#9CA3AF" />
+                <Cancel01Icon size={20} color={theme.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.actionGrid}>
               <TouchableOpacity
-                style={styles.actionCard}
+                style={[styles.actionCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
                 onPress={() => {
                   setQuickActionVisible(false);
                   setAiChatVisible(true);
@@ -160,12 +158,12 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(81, 130, 216, 0.15)' }]}>
                   <SparklesIcon size={24} color={Colors.primary} />
                 </View>
-                <Text style={styles.actionCardTitle}>AI Chatbot</Text>
-                <Text style={styles.actionCardSub}>Ask & calculate calories</Text>
+                <Text style={[styles.actionCardTitle, { color: theme.text }]}>AI Chatbot</Text>
+                <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>Ask & calculate calories</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.actionCard}
+                style={[styles.actionCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
                 onPress={() => {
                   setQuickActionVisible(false);
                   setLogMealVisible(true);
@@ -174,30 +172,36 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
                   <Restaurant01Icon size={24} color="#EF4444" />
                 </View>
-                <Text style={styles.actionCardTitle}>Log Meal</Text>
-                <Text style={styles.actionCardSub}>Add custom macros</Text>
+                <Text style={[styles.actionCardTitle, { color: theme.text }]}>Log Meal</Text>
+                <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>Add custom macros</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.actionCard}
-                onPress={() => handleActionSelect('Track Water')}
+                style={[styles.actionCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
+                onPress={() => {
+                  setQuickActionVisible(false);
+                  setLogWaterVisible(true);
+                }}
               >
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
                   <DropletIcon size={24} color="#38BDF8" />
                 </View>
-                <Text style={styles.actionCardTitle}>Log Water</Text>
-                <Text style={styles.actionCardSub}>+250ml glass</Text>
+                <Text style={[styles.actionCardTitle, { color: theme.text }]}>Log Water</Text>
+                <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>+250ml glass</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.actionCard}
-                onPress={() => handleActionSelect('Log Workout')}
+                style={[styles.actionCard, { backgroundColor: theme.cardSecondary, borderColor: theme.border }]}
+                onPress={() => {
+                  setQuickActionVisible(false);
+                  setLogWorkoutVisible(true);
+                }}
               >
                 <View style={[styles.actionIconBg, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
                   <Dumbbell01Icon size={24} color="#F59E0B" />
                 </View>
-                <Text style={styles.actionCardTitle}>Log Workout</Text>
-                <Text style={styles.actionCardSub}>Burned calories</Text>
+                <Text style={[styles.actionCardTitle, { color: theme.text }]}>Log Workout</Text>
+                <Text style={[styles.actionCardSub, { color: theme.textMuted }]}>Burned calories</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -209,6 +213,12 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
 
       {/* Log Meal Modal */}
       <LogMealModal visible={logMealVisible} onClose={() => setLogMealVisible(false)} />
+
+      {/* Log Workout & Manage Activities Modal */}
+      <LogWorkoutModal visible={logWorkoutVisible} onClose={() => setLogWorkoutVisible(false)} />
+
+      {/* Log Water & Hydration Modal */}
+      <LogWaterModal visible={logWaterVisible} onClose={() => setLogWaterVisible(false)} />
     </>
   );
 }
@@ -235,16 +245,14 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     height: 64,
-    backgroundColor: '#121824',
     borderRadius: 32,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 12,
   },
@@ -261,9 +269,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 20,
   },
-  tabButtonActive: {
-    backgroundColor: 'rgba(81, 130, 216, 0.12)',
-  },
   tabLabel: {
     fontSize: 11,
     fontWeight: '600',
@@ -273,13 +278,9 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '700',
   },
-  tabLabelInactive: {
-    color: '#64748B',
-  },
   divider: {
     width: 1,
     height: 24,
-    backgroundColor: '#1E293B',
     marginHorizontal: 4,
   },
   fabButton: {
@@ -297,16 +298,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(12, 15, 23, 0.75)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#121824',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 22,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -315,7 +313,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
   },
@@ -323,7 +320,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1C253B',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -335,11 +331,9 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: '48%',
-    backgroundColor: '#1C253B',
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#1E293B',
     alignItems: 'center',
   },
   actionIconBg: {
@@ -351,12 +345,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   actionCardTitle: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },
   actionCardSub: {
-    color: '#9CA3AF',
     fontSize: 11,
     marginTop: 2,
   },
