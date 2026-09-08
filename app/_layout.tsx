@@ -84,13 +84,18 @@ function InitialLayout() {
   );
 }
 
+import { ThemeProvider } from '../context/ThemeContext';
+
 export default function RootLayout() {
   // Use tokenCache only on native mobile platforms; web manages session tokens via native cookies/storage
   const cache = Platform.OS === 'web' ? undefined : tokenCache;
 
   return (
     <ClerkProvider tokenCache={cache} publishableKey={publishableKey}>
-      <InitialLayout />
+      <ThemeProvider>
+        <InitialLayout />
+      </ThemeProvider>
     </ClerkProvider>
   );
 }
+
